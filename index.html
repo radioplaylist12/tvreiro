@@ -9,204 +9,33 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/clappr/0.3.13/clappr.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #0a0c12;
-      overflow: hidden;
-      height: 100vh;
-    }
-    .player-wrapper {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      background: #000;
-    }
-    #playerDestino, #reprodutor-clappr, .player-wrapper iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100% !important;
-      height: 100% !important;
-      border: none;
-    }
-    .aviso-canal {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.85);
-      padding: 6px 18px;
-      border-radius: 40px;
-      color: white;
-      font-size: 0.85rem;
-      font-weight: 500;
-      z-index: 9999;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s;
-      backdrop-filter: blur(8px);
-      white-space: nowrap;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0a0c12; overflow: hidden; height: 100vh; }
+    .player-wrapper { position: relative; width: 100%; height: 100vh; background: #000; }
+    #playerDestino, #reprodutor-clappr, .player-wrapper iframe { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; border: none; }
+    .aviso-canal { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); padding: 6px 18px; border-radius: 40px; color: white; font-size: 0.85rem; font-weight: 500; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(8px); white-space: nowrap; }
     .aviso-canal.mostrar { opacity: 1; }
-    
-    /* Botões de controle (centralizados inferior) */
-    .controles {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 8px;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(12px);
-      padding: 8px 16px;
-      border-radius: 50px;
-      border: 1px solid rgba(255,255,255,0.2);
-      z-index: 9999;
-      transition: opacity 0.3s, visibility 0.3s;
-    }
-    .controles.oculto {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-    .btn-controle {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.6);
-      border: 1px solid rgba(255,255,255,0.3);
-      color: white;
-      font-size: 1.1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.2s;
-    }
+    .controles { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(0,0,0,0.5); backdrop-filter: blur(12px); padding: 8px 16px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.2); z-index: 9999; transition: opacity 0.3s, visibility 0.3s; }
+    .controles.oculto { opacity: 0; visibility: hidden; pointer-events: none; }
+    .btn-controle { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
     .btn-controle:hover { background: #0284c7; transform: scale(1.05); }
     .btn-controle:active { transform: scale(0.95); }
-
-    /* Botão toggle (canto inferior direito) */
-    .btn-toggle {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 10000;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.3);
-      color: white;
-      font-size: 1.2rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.2s;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
-    .btn-toggle:hover {
-      background: #0284c7;
-      transform: scale(1.05);
-    }
-    .btn-toggle:active {
-      transform: scale(0.95);
-    }
-
-    /* Menu lateral */
-    .menu-lateral {
-      position: fixed;
-      top: 0;
-      left: -300px;
-      width: 300px;
-      height: 100%;
-      background: rgba(10,15,29,0.95);
-      backdrop-filter: blur(16px);
-      border-right: 1px solid rgba(255,255,255,0.1);
-      z-index: 10001;
-      transition: left 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
+    .btn-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 10000; width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+    .btn-toggle:hover { background: #0284c7; transform: scale(1.05); }
+    .btn-toggle:active { transform: scale(0.95); }
+    .menu-lateral { position: fixed; top: 0; left: -300px; width: 300px; height: 100%; background: rgba(10,15,29,0.95); backdrop-filter: blur(16px); border-right: 1px solid rgba(255,255,255,0.1); z-index: 10001; transition: left 0.3s ease; display: flex; flex-direction: column; }
     .menu-lateral.aberto { left: 0; }
-    .menu-header {
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
+    .menu-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .menu-header h2 { font-size: 1.1rem; font-weight: 600; color: white; }
-    .btn-fechar {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      font-size: 1.2rem;
-      cursor: pointer;
-    }
-    .lista-canais {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .item-canal {
-      background: rgba(255,255,255,0.05);
-      border-radius: 10px;
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: 0.1s;
-    }
-    .item-canal.ativo {
-      background: rgba(2,132,199,0.3);
-      border-left: 3px solid #0284c7;
-    }
-    .capa-canal {
-      width: 36px;
-      height: 28px;
-      background: #000;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
+    .btn-fechar { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+    .lista-canais { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .item-canal { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.1s; }
+    .item-canal.ativo { background: rgba(2,132,199,0.3); border-left: 3px solid #0284c7; }
+    .capa-canal { width: 36px; height: 28px; background: #000; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .capa-canal img { width: 100%; height: 100%; object-fit: contain; }
     .info-canal h3 { font-size: 0.85rem; font-weight: 500; color: white; }
-    .btn-abrir-menu {
-      position: fixed;
-      top: 16px;
-      left: 16px;
-      z-index: 9999;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: white;
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    [class*="ad"], [id*="ad"], iframe[src*="doubleclick"], iframe[src*="googlesyndication"] {
-      display: none !important;
-    }
+    .btn-abrir-menu { position: fixed; top: 16px; left: 16px; z-index: 9999; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); color: white; width: 42px; height: 42px; border-radius: 12px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    [class*="ad"], [id*="ad"], iframe[src*="doubleclick"], iframe[src*="googlesyndication"] { display: none !important; }
     @media (max-width: 640px) {
       .controles { gap: 6px; padding: 6px 12px; bottom: 12px; }
       .btn-controle { width: 34px; height: 34px; font-size: 0.9rem; }
@@ -224,7 +53,7 @@
   <div class="aviso-canal" id="avisoCanal"></div>
   <button class="btn-abrir-menu" id="btnMenu"><i class="fas fa-bars"></i></button>
   <button class="btn-toggle" id="btnToggle"><i class="fas fa-eye"></i></button>
-  
+
   <div class="menu-lateral" id="menuLateral">
     <div class="menu-header">
       <h2>Rei dos <span style="color:#38bdf8">Canais</span></h2>
@@ -245,11 +74,10 @@
   </div>
 
   <script>
-    // ==================== LISTA DE CANAIS (ESTÁVEL, COMO ANTES) ====================
     const LOGO_PADRAO = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-    
+
+    // ==================== LISTA DE CANAIS (REORGANIZADA E CORRIGIDA) ====================
     const listaCanais = [
-      const listaCanais = [
       // Abertos
       { id: "globo", nome: "Globo SP", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi8BKQoHSHE_rJ1es7TLJVa3w6YZCrAaya4a1QJ-0EZPdZ8pmzKxoeQF_GIaUFow-h3dgfXCABIgjkKmP3yy7UNpavxTfKiQPPw9nh3XPKNxh5zSFydSb6DE8Xpl_msXQVbMt7r5Su7m3Y_0ID8IdnA0xoOl4sCGsPbniZ5H360ImTLdRV_d6SHNCaNqvRy/s500/1000095836.png", url: "https://s2.micineovs.com/GLOBO/index.m3u8?token=16FOTt9Ae2m8" },
       { id: "record", nome: "Record", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgwD3rQ7GnjVWg99MtiqlZYzPzbqwOaBd3quhCM8c3EpA_q-Vfd6PWv5BuaTSvrkAJy8VGOQViYohrj44LS2SuIUztdENRSZ7_pRloDLQvEpj9J7nhrItcMPF2pgeoMjnZdqEKcB4iYRB-O0K0WP0n46W-anYyniPk7BOmGQp9VxTQKhM4tGspm6UMvq_Hy/s200/1000095886.png", url: "https://cdn.jmvstream.com/w/LVW-10842/LVW10842_513N26MDBL/playlist.m3u8" },
@@ -258,52 +86,39 @@
       { id: "redetv", nome: "RedeTV", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7niqbND_BPvpSRlZ0BxIZfvlj1xktmEpTDecj_pt2aKxmbK34yxzVbmRGsyRQ8eIE7ytlvDu7QTFrFQgXHvtqEolc0b1i6xCbmV8nwUmdpea7woEGAGCbIoFl-PXGMw5hww8iqwX4uCSmnwToAp65o5kFruWIywtO0TpRJGZW8Z0iHE9iJ4Tr8VjMpNkx/s200/1000095890.png", url: "https://tv01.zas.media:1936/redetvparana/redetvparana/playlist.m3u8" },
       { id: "sbtnews", nome: "SBT News", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjC9IlW1r8EqQ9W_olbWZEfIzYRimt94kS-X2r23CPW9FAaH4kF7S_wTgr-UwYTFBKKY5_zw-Rk1hLptUeuHaWUEdcQTMxqtxLsnph7YmRyAM5Q0uNIr8_5l0LwtvzHuqqXiHjjUiJkyG0U_Xee9PkxK-J3jQe6-COFgRhWwPXA5xyubcWOImXmqLoaNWd-/s200/1000095891.png", url: "https://sbtnews.maissbt.com/index.m3u8" },
       { id: "recordnews", nome: "Record News", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh724qcqRrYseEChf4sVphF9-zv30EctuE4FaMPpPmpICzBn9HV6bxLxqYKcFbvkmeTvC2MDgHfmj19Wvm7ocrz8RJiUPKyEIyepE7ten09I8TvD9t_wOzDye1L1YaURx7HLZOshzBlz_llz3mGMv_oL2Eucn3kuRWfbiycFwQS1-eMFtWXpZaNoBHezily/s200/1000100484.png", url: "https://origin-fast.b-cdn.net/RECORD_NEWS/index.m3u8" },
-     
       { id: "tvcultura", nome: "TV Cultura", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgNP_PfRXK02Favkxzmd6mb6S0dC0-TgxCp4sa17O0b2mNhie5CtPLJVwBfxPFKTYTWaMhu2fkmLaZnYnTK5eAJkRP-Lb-Pi3DZgqbZP4GeGRaWN1x2Kg1xBRllZxZNQMzniUW-xaAPPfONDDpPZ1L69nWoQTv198UTZJDymLs2T6pWAF3RpcVZYIBjl0G6/s2400/1000084398.png", url: "https://player-tvcultura.stream.uol.com.br/live/tvcultura.m3u8" },
-      // Esportes ESPN
+      // Esportes
       { id: "espn", nome: "ESPN", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhpRpR_FhOcIAguhW1mZ6UyNL4MLKeKfXcdMhx7F25CNGhC138lYnB0D89Jn6HKYAeCxeyNsdtJmnBwoVQr-ZdH84yHDA3ztH2ButHVd6RDuPTTuLCWlXL8UEz42-lmUuImqyBg901kWim-TlFDKiRyymKSouTQvUir3DMpzvDoF92rn1FjyR-LIEX7aY2a/s500/1000094299.png", url: "https://origin-fast.b-cdn.net/ESPN/index.m3u8" },
-      
-      // SporTV
       { id: "sportv", nome: "SporTV", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjip9UUdroAnPWpqOoYsmr4cpp-v1EBJceFSpc-PT6GmniKEhZYjqarBQ3vCXENQaL1_7aghKOYSXKaSpq97FGERIYKrTTIwcLZAI2qBM_DqL3yVQb5P50g8ElJCpQonNLmzdHxasoAKJMo8Cw6vv-Cci3f3d8NKopzSnQHk7v3c3Hxw_x3Ofnnil3VA-SW/s285/1000095893.png", url: "https://22.embedtv.lat/sportv" },
-     
       { id: "premiere", nome: "Premiere", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjvobTg1nwGv6Aa4vd9q9iCozx0eaUJG2rAml-DXf5N1HoXLwm4LZcEb8i5ChNxbLunF5i4FaQZHBGMjoi5dOPZOm0jhLj5KvmUnX0IG_eaLoxSLcCKXsuWCMHIu45kecXJa9gctpaWe_fMWVbbwY8HpMCAvxJ8J5KUpR2hzp-qiT8D1SfnmCyM5D0z4nmm/s500/1000089572.png", url: "https://22.embedtv.lat/premiere" },
-      
-      // Outros esportes
       { id: "nsports", nome: "NSports", logo: "https://upload.wikimedia.org/wikipedia/commons/5/54/Logo_NSports_Horizontal.png", url: "https://cc-zv5hyc9jj47n5.akamaized.net/ogc/nsprt/nsprt_720p.m3u8" },
       { id: "xsports", nome: "Xsports", logo: "https://upload.wikimedia.org/wikipedia/commons/3/3f/Xsports_logo.png", url: "https://origin-fast.b-cdn.net/XSPORTS/index.m3u8" },
       { id: "getv", nome: "GeTV", logo: "https://noflix.top/uploads/69b17a6052e37.svg", url: "https://amg00716-globo-amg00716c1-tcl-br-9495.playouts.now.amagi.tv/1080p-cc/index.m3u8" },
       { id: "fifa", nome: "FIFA+", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEioWSwmkA421yze7b05QNFGxaKkFIIa6Y2bhNTKx-D6rdUkpXF4fAaFocjwn3PME_vQ3aYGPq05WT1ufz0yYR56ohoZgAhZtq2FNl9JGr2qXnmYn_Rfh4Cp6hu1LF38eK5FnJQt-PCtOXFbQk0hQoDPwD-iKTQ6JuiFKvp7TdtuO7nI1tyeV7pV-ILV8p56/s200/1000094111.png", url: "https://c2657533.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UGxleC1icl9GSUZBUGx1c1BvcnR1Z3Vlc2VfSExT/playlist.m3u8" },
       { id: "bandsports", nome: "Band Sports", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjXmNxG3u0db8R-8OZ0WPb2WgJRy3b93_VXK_fJc_Napapd7ES7MGouXDFlNsQOab7MlYBTYXku-jf75vIGC77oN2BMc2g96ChzuEWe0RQyVsD2dCouahBMwpkFUR8x3n80tMxXKhooTWajKt1gJafHtgCUPURWd1CWwQS4NtxWW7Kkepj89WFT2OgbKoOm/s300/1000094516.png", url: "https://origin-fast.b-cdn.net/BAND_SPORTS/index.m3u8" },
-    
+      // Filmes e Séries
       { id: "tnt", nome: "TNT", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgMl-EkP86bDSn6snwuXSXNWqNnaKmycLMvA4dl1gL3uH1oT-o9DkEqKhoQVk3nxdSHrZsgSwj_Xa_n1i8dtbMv4x89NFBjTjNyS9Me5l01Z6M9dq4-7nMfX-NggyjJ2dm29eZM8QW4oMkKllg1wZa9PR1Pacqgciw6oAiYJJCiPTMLnuLMb2sJ14W8dhWg/s960/1000284718.png", url: "https://origin-fast.b-cdn.net/TNT/index.m3u8" },
-     
       { id: "hbo", nome: "HBO", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh17PvJ6y6IwCXOAi7_KbsNzClpOEjYJYuNG2-0uwVmNFGEhBWmk5Z-4co30sMM4MVKHGWVwBZyh1hZ45tyvWJmRiK4Jqe8BqmyyerPDRzR2u6lqV_uoatcUiYddWnQJPfCbv_tJH8sIpZj7fMDhNaja0-u4IfaCSgiLntYO9IxeEbNJWYJFc-Pnk2Oou4K/s500/1000094455.png", url: "https://22.embedtv.lat/hbo" },
       { id: "hbo2", nome: "HBO 2", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh17PvJ6y6IwCXOAi7_KbsNzClpOEjYJYuNG2-0uwVmNFGEhBWmk5Z-4co30sMM4MVKHGWVwBZyh1hZ45tyvWJmRiK4Jqe8BqmyyerPDRzR2u6lqV_uoatcUiYddWnQJPfCbv_tJH8sIpZj7fMDhNaja0-u4IfaCSgiLntYO9IxeEbNJWYJFc-Pnk2Oou4K/s500/1000094455.png", url: "https://22.embedtv.lat/hbo2" },
       { id: "hbosign", nome: "HBO Signature", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh1ckZgmag73YKkW7G52u0yVyEQcxu9gY1eoEwU8Ew0KojTY0dkylGg4xsdXOz-_DudnEjkBDwjYN9SLuK_5_NjAoFd0m2Hh8SDE9-3EPrHR0vOJSq9akQhsJansYLb7yKn2lZjoyqMzwCdXToz1YRlrMzoBMBv8Ajh9UTrAQT8orH1fnKAaSeFeFahITjo/s500/1000095871.png", url: "https://22.embedtv.lat/hbosignature" },
       { id: "hbopop", nome: "HBO Pop", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh17PvJ6y6IwCXOAi7_KbsNzClpOEjYJYuNG2-0uwVmNFGEhBWmk5Z-4co30sMM4MVKHGWVwBZyh1hZ45tyvWJmRiK4Jqe8BqmyyerPDRzR2u6lqV_uoatcUiYddWnQJPfCbv_tJH8sIpZj7fMDhNaja0-u4IfaCSgiLntYO9IxeEbNJWYJFc-Pnk2Oou4K/s500/1000094455.png", url: "https://22.embedtv.lat/hbopop" },
       { id: "hboxtreme", nome: "HBO Xtreme", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEirenWIjiV_vw9l2t27K7UYS_TLTFzx7LdOrjo2AtnhqduUlox_fXjmPhMDceqIbMP1j8qYrQikv20l7cTkGOhmoSbLx8nXmN1eaiRs9sDsRmlRqyaOpKsX0wRgYuZ1kC2JCuE3s38a-xCNn1D7aYTmHMbig8eoQa0rUeIT_GIVmqC82-jTJ3CjcfEBLq2U/s252/1000095872.png", url: "https://22.embedtv.lat/hboxtreme" },
-     
       { id: "hboplus", nome: "HBO+", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg5-Wdb91-q33y_RFwQIILuFAXgc5drwKdiMiK-FPSAg2ZcOBSDWdO43m23cM6x8I6TLrJTKSw5XGCnN8wUW-26lMgYaTERP2T9lebPrcDnhWZJVMgV1OY3J5Qt7tE7xsnZpeoTGETPb2QI6GbwXb58fKWc7vOtvULM6zylIW6PJ35BT_6XusCmwMSTwZaw/s500/1000094456.png", url: "https://22.embedtv.lat/hboplus" },
-     
       { id: "amc", nome: "AMC", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEglAgEf3loVmVwbV2NqSLP2pHxWFSmv6M5RCmyL6xf6flVQjZUIHT-2nu8Cf81fAte7HnyshlIevfFxyblEgoUmu2J1DJuOogQ1NFhK7hoZDGNLVeazoJQIMGcfO152HskH3Ytbl9W_-xwYCOMyy8IVfLeqODoKp-Vc8ZmHQdRq7ysINbQdItOZiNkfTFVN/s500/1000094506.png", url: "https://origin-fast.b-cdn.net/AMC_BRASIL_TK/index.m3u8" },
       { id: "ae", nome: "A&E", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgrmfxZGfmdZuh_LjjcP6awqaQ_mIvX9wgecg46vqdXdn86d0nv_6KXYUc8VsHrhlfEbJsouQmFN_s4z43bnc5qokx0GKAWkih3CJORb97Kme6dZgXhpKcwaSx3AkP2Gc3RSbcE5rMrpPSkDgsJPNUPhc9LnFLW1bfBfw2wZrHhEUMWcos_fJ27mis_TAb-/s500/1000094503.png", url: "https://origin-fast.b-cdn.net/AeE_BRASIL_TK/index.m3u8" },
-     
+      // Notícias
       { id: "cnn", nome: "CNN Brasil", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgml9vNRwzmC18MGueh5TB4baPH1T9Sw0PgN0a0fR02IBxbTQTuTycDqQ6Gzoz11OS5uVB839SHyDEjRKznVQErCUUjHgOX1hFYks_h-znVMMyOavemxi5ZeFch9xKeH44u7nytIhKU-0bxJRHOASfzB3ERCvQtXAIysMuK53u4bQCih_hKnvcs7Jn3BjHf/s500/1000092648.png", url: "https://d25usgadhphvwi.cloudfront.net/v1/manifest/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-y4riz7eo92zpm/af2e80dd-b360-4c41-855d-3740b87ba21c/0.m3u8" },
       { id: "globonews", nome: "Globo News", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhzfFJi3XVL5U785WYGxRnX35uabXlkq0AqVnzkWWMGpytI7E2IBgf1uigAvh0KOapNR6g4iuYs-97cOluXgqGWFXl2Ct2DTAaRNYvHdrsOkeb7wT4jpILZ6-YVAyaMu8ErApix3nsDgsu9Lkqq3E28u7vA_KEkDLCLfkhIjqGOgvbDug6fld5eWsKFfF1S/s300/1000095837.png", url: "https://3.cdn9embed.xyz/globonews/index.m3u8" },
       { id: "bandnews", nome: "Band News", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiA90xb0aZJgWyC7nJjbtairQGiRfTA8ZKB4KxteDDk32y_wmNtikHJhgZEk2apNSa2u4111vyb8cyPT6lJ2pslW98E78aV0LL546us7clY3Dmsfq974Ed7ck7NOQjDkxHLY_1be5AmjTd1rjegR7-uhcgSNPfA25P1DHmVRx-KP3uaZJSPij2ug5hSdZ44/s300/1000094515.png", url: "https://22.embedtv.lat/bandnews" },
       // Variedades
       { id: "gnt", nome: "GNT", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjaqP5XcRSVUcVsrNmu1xPB-TBmxlLB8csQ1Suk59ssXXK7aizw-_NhCIoq4jp_Xrjy9PVfI6m26uvsgAJ8y_uK-_WOXHtbsZu93-1DVO77r5GDeP35RodWDsincnGHaBxeBYCA2R-bG5kHoPF8DHyzMhliWc63t209vP7cE0Vts8Zo4WUDj64xI5SIYch1/s500/1000095840.png", url: "https://14.cdn3embed.xyz/gnt/index.m3u8" },
       { id: "multishow", nome: "Multishow", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjpa4xIvzkVzBUk7GCNKbJAnUdGtMXrymLJHMbs0rlnegQ2VMiQbxSVgRCHg-BvAeQbKPnO5xWmfxQk6AjuQe3vj5qS7419qLiL3Hyxg46-jZXYbtYA7kleMmn9jXVR48c1FkIg6wAOAl_aLLWNjKNkozosw7ZoPaJ5oP9qA-hPmohDAsOyCNU79cY6oIZ8/s200/1000095885.png", url: "https://22.embedtv.lat/multishow" },
-     
-      // Infantil
-     
       // Documentários
       { id: "discovery", nome: "Discovery Channel", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgbh8K8levI7oU5nHEXWmcyziQn5OYD7TkSBHRTNy05wDFh0Mpl9jyN6zz9ulCxRw9CWBKBzsde7K7oPXPwF1UOtE5YbzIWBKfrQYciTDAZtawkLpInJbw4onVi1Fem6dFPbg4mXN9eDP_RTJailD4T4yhopVC0WWNKLIqIsC3So1EcQrhiIxWI46QwToJn/s425/1000148590.png", url: "https://origin-fast.b-cdn.net/DISCOVERY_CHANNEL_NX/index.m3u8" },
       { id: "discoverytheater", nome: "Discovery Theater", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgHTiGFPWkfCc9vsnkjkREa_hTixPO3nhJq5eM4jUAgpndGlu9-teJr-iQlJ-3uhk4xgF-7-8mrNRCrQ8NHUqj4jDogYpMU0-wjA33nlzmz1f6PN7MvNK4Y04_ryTD0nx1j-JTt6rl-SM7f4WdgT5xPvzNYnXorGIbLJv2zxwrJEphUvDfd4d_8WLaGr-5L/s500/1000095831.png", url: "https://cdn-5.nxplay.com.br/DISCOVERY_THEATER_NX/index.m3u8" },
       { id: "discoveryworld", nome: "Discovery World", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgADpqb11XtTGerYkzx2yovIntCu9fb9Uh6lRcMW4GM9FJOhCw1VFRtz9aCQVJcyIuJnvTA2YzNh-bkXd-ZSubiqRTYJWJNPTdC4g3kqCNGeM4_8qBbhU7YDpU5OGmqgPhDmExvHw41IU8gxGuoz4QyFKPiS3EMbCneDiHYJKJew-6ZvTLN7nVaRkc2G2IB/s500/1000095835.png", url: "https://cdn-5.nxplay.com.br/DISCOVERY_WORLD_NX/index.m3u8" },
       { id: "discoveryid", nome: "Discovery ID", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgbh8K8levI7oU5nHEXWmcyziQn5OYD7TkSBHRTNy05wDFh0Mpl9jyN6zz9ulCxRw9CWBKBzsde7K7oPXPwF1UOtE5YbzIWBKfrQYciTDAZtawkLpInJbw4onVi1Fem6dFPbg4mXN9eDP_RTJailD4T4yhopVC0WWNKLIqIsC3So1EcQrhiIxWI46QwToJn/s425/1000148590.png", url: "https://origin-fast.b-cdn.net/DISCOVERY_ID_NX/index.m3u8" },
       { id: "discoveryscience", nome: "Discovery Science", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiJckwtMBJkJ7z78MyztEDBSFR0yJPqR7Nl2pOLLT4gWsLD261nlWBABHE1BRDcRSAAQ3OVKT2fgvdrfpG5-ku5EfaqHhc5axfP8Yrj0JQiGIXwbj9Q7Gz-YCaC2w0-vVMGGEfwYOoIgM0k6qwlEOOqW3-OCdpowVH4WxHBvRan0TZJ4mJdDTTjIDukwHwn/s500/1000095713.png", url: "https://origin-fast.b-cdn.net/DISCOVERY_SCIENCE_NX/index.m3u8" },
-     
       { id: "discoveryhh", nome: "Discovery H&H", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj51QmKPcHcRMIsVQZ99vmkrt50UT4gDHWcgCag21UDUzFZWy2-yyv0scAmR_GblRYMMhByEm6VxXEr6nT-Y43w-tKy_klB8SavrTc9js5YnPZI1o6WZcsA8UsHErRVi-M953Z2m8HDD4mc1Ci-SU_o6Ed4UPy09E1DhOaCCdvfYfeK-uGoj96OQBuzCjg0/s500/1000094454.png", url: "https://cdn-3.nxplay.com.br/DISCOVERY_HH_NX/index.m3u8" },
       { id: "animalplanet", nome: "Animal Planet", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjRN1HFA4SreutN51iHbcWQM1YvvNmNwnl-hb5EPsbkaGdvKeMZKmJeWincdAiDAEK5ByOl3XV1mgUtdSN0F7Zou_3CYAAgMWvFeDVW0ZXl1v-UwwVKzui34QKpnj-44hWqMZpk_CTkNJiD0ATTryCvXI8FVxjNTAZ3kkUs06kcneqsThuz3ZNt2yV1YtGK/s500/1000094508.png", url: "https://cdn-3.nxplay.com.br/ANIMAL_PLANET/index.m3u8" },
       { id: "history", nome: "History", logo: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj1Uatflc6CoV-aAE-tp4i-fQbOau6hXxB1JczqILxkENzmgCn_cvQX8Rm7T0FXy3KMqnBbXCySp-uDCgxMO8hNqDQ3Ox2co3C9HTj2A0Iw7qy1HjOBDzuMVWzLB5owYnnY3mWuQtcexFSK0JnNJ_hlzbFmEOGnoUtokwuGMTUsRQ1jw4R9jMZ0Sml3g3rX/s300/1000095878.png", url: "https://cdn-3.nxplay.com.br/HISTORY_TK/index.m3u8" },
@@ -316,8 +131,6 @@
     let player = null;
     let canalAtual = null;
     let timerAviso = null;
-
-    // Estado dos controles (visível ou oculto)
     let controlesVisiveis = true;
     const btnToggle = document.getElementById('btnToggle');
     const controlesDiv = document.getElementById('controles');
@@ -338,7 +151,6 @@
       if (listaCanais.length) abrirCanal(listaCanais[0].id);
       configurarEventos();
       bloquearAnuncios();
-      // Inicia com controles visíveis
       controlesDiv.classList.remove('oculto');
       btnToggle.innerHTML = '<i class="fas fa-eye"></i>';
       btnToggle.addEventListener('click', toggleControles);
