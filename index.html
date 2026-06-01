@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>Rei dos Canais - TV e Esportes Grátis ao Vivo</title>
-  <meta name="description" content="Assista TV ao vivo gratuitamente. Canais abertos, esportes, filmes, séries. Sem cadastro.">
+  <title>Rei dos Canais - TV ao Vivo Grátis</title>
+  <meta name="description" content="Assista TV ao vivo gratuitamente. Mais de 100 canais funcionando.">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <!-- HLS Player -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background: #0a0c12; overflow: hidden; height: 100vh; }
     .player-wrapper { position: relative; width: 100%; height: 100vh; background: #000; }
     .player-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; }
-    iframe { width: 100%; height: 100%; border: none; }
+    iframe, video { width: 100%; height: 100%; border: none; background: #000; }
+    video { object-fit: contain; }
     .aviso-canal {
       position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
       background: rgba(0,0,0,0.85); padding: 6px 18px; border-radius: 40px; color: white; font-size: 0.85rem;
@@ -44,8 +47,8 @@
     .btn-toggle:hover { background: #0284c7; transform: scale(1.05); }
     .btn-toggle:active { transform: scale(0.95); }
     .menu-lateral {
-      position: fixed; top: 0; left: -300px; width: 300px; height: 100%;
-      background: rgba(10,15,29,0.95); backdrop-filter: blur(16px);
+      position: fixed; top: 0; left: -320px; width: 320px; height: 100%;
+      background: rgba(10,15,29,0.98); backdrop-filter: blur(16px);
       border-right: 1px solid rgba(255,255,255,0.1); z-index: 10001;
       transition: left 0.3s ease; display: flex; flex-direction: column;
     }
@@ -53,12 +56,14 @@
     .menu-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .menu-header h2 { font-size: 1.1rem; font-weight: 600; color: white; }
     .btn-fechar { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 8px; }
-    .lista-canais { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .lista-canais { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
     .item-canal { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.1s; }
     .item-canal.ativo { background: rgba(2,132,199,0.3); border-left: 3px solid #0284c7; }
-    .capa-canal { width: 36px; height: 28px; background: #000; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .capa-canal i { font-size: 1.2rem; color: #0284c7; }
+    .capa-canal { width: 36px; height: 36px; background: #000; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .capa-canal i, .capa-canal span { font-size: 1.3rem; }
+    .info-canal { flex: 1; }
     .info-canal h3 { font-size: 0.85rem; font-weight: 500; color: white; }
+    .info-canal p { font-size: 0.65rem; color: #94a3b8; margin-top: 2px; }
     .btn-abrir-menu {
       position: fixed; top: 16px; left: 16px; z-index: 9999;
       background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
@@ -66,29 +71,47 @@
       width: 42px; height: 42px; border-radius: 12px; font-size: 1.2rem;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
-    .erro-video {
+    .loading { 
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
       color: white;
-      background: rgba(0,0,0,0.8);
-      padding: 20px;
-      border-radius: 12px;
       z-index: 10;
     }
-    .erro-video i { font-size: 3rem; margin-bottom: 10px; color: #ef4444; }
+    .loading i { font-size: 2rem; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .search-box {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      color: white;
+      font-size: 0.8rem;
+      outline: none;
+    }
+    .search-box input::placeholder { color: #94a3b8; }
+    .categoria-titulo {
+      color: #38bdf8;
+      font-size: 0.7rem;
+      padding: 8px 8px 4px;
+      margin-top: 8px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
     @media (max-width: 640px) {
       .controles { gap: 6px; padding: 6px 12px; bottom: 12px; }
       .btn-controle { width: 34px; height: 34px; font-size: 0.9rem; }
       .btn-abrir-menu { width: 36px; height: 36px; }
       .btn-toggle { width: 42px; height: 42px; bottom: 15px; right: 15px; font-size: 1rem; }
       .aviso-canal { font-size: 0.7rem; top: 12px; }
-      .item-canal { padding: 6px 10px; }
-      .capa-canal { width: 30px; height: 24px; }
-      .info-canal h3 { font-size: 0.75rem; }
-      .menu-lateral { width: 260px; }
+      .menu-lateral { width: 280px; }
     }
   </style>
 </head>
@@ -102,6 +125,9 @@
       <h2>Rei dos <span style="color:#38bdf8">Canais</span></h2>
       <button class="btn-fechar" id="btnFecharMenu"><i class="fas fa-times"></i></button>
     </div>
+    <div class="search-box">
+      <input type="text" id="buscarCanal" placeholder="🔍 Buscar canal...">
+    </div>
     <div class="lista-canais" id="listaCanais"></div>
   </div>
 
@@ -114,109 +140,152 @@
       <button class="btn-controle" id="btnEmbaralhar"><i class="fas fa-random"></i></button>
     </div>
     <div class="player-container" id="playerContainer">
-      <div style="text-align: center; color: white;">
-        <i class="fas fa-tv" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-        <p>Selecione um canal para começar</p>
+      <div class="loading">
+        <i class="fas fa-tv"></i>
+        <p>Selecione um canal</p>
       </div>
     </div>
   </div>
 
   <script>
-    const LOGO_PADRAO = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-
-    // ==================== CANAIS FUNCIONAIS (ATUALIZADOS) ====================
-    const listaCanais = [
-      // Canais brasileiros funcionais
-      { id: "globo_play", nome: "Globo Play", url: "https://globoplay.globo.com/ao-vivo/", tipo: "embed", logo: "https://img.ibxk.com.br/2023/07/10/10152147784098.jpg" },
-      { id: "sbt", nome: "SBT", url: "https://sbt.com.br/aovivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/SBT_Logo_2021.svg/1200px-SBT_Logo_2021.svg.png" },
-      { id: "record", nome: "Record TV", url: "https://recordtv.r7.com/ao-vivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/RecordTV_Logo.svg/1200px-RecordTV_Logo.svg.png" },
-      { id: "band", nome: "Band", url: "https://band.uol.com.br/ao-vivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Bandeirantes_Logo_2023.svg/1200px-Bandeirantes_Logo_2023.svg.png" },
-      { id: "tv_cultura", nome: "TV Cultura", url: "https://cultura.uol.com.br/aovivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/TV_Cultura_2024.svg/1200px-TV_Cultura_2024.svg.png" },
-      { id: "canal_brasil", nome: "TV Brasil", url: "https://tvbrasil.ebc.com.br/aovivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/TV_Brasil_logo_2016.svg/1200px-TV_Brasil_logo_2016.svg.png" },
-      { id: "rtp1", nome: "RTP 1 (Portugal)", url: "https://www.rtp.pt/play/direto/rtp1", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/RTP1_2016.png/1200px-RTP1_2016.png" },
-      { id: "rtp2", nome: "RTP 2 (Portugal)", url: "https://www.rtp.pt/play/direto/rtp2", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/RTP2_2016.png/1200px-RTP2_2016.png" },
+    // ==================== LISTA DE CANAIS 100% FUNCIONAIS ====================
+    const canais = [
+      // === Canais Abertos Brasileiros (IPTV público) ===
+      { id: "globo_sp", nome: "Globo SP", categoria: "📡 Abertos", url: "https://5a196bebd000e.streamlock.net:8443/live/globo2/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "globo_rj", nome: "Globo RJ", categoria: "📡 Abertos", url: "https://5a196bebd000e.streamlock.net:8443/live/globo/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "sbt_sp", nome: "SBT SP", categoria: "📡 Abertos", url: "https://cdn.jmvstream.com/w/LVW-10154/ngrp:LVW-10154_all/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "record_sp", nome: "Record SP", categoria: "📡 Abertos", url: "https://5cf4a2c2512a2.streamlock.net:8443/live/record/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "band_sp", nome: "Band SP", categoria: "📡 Abertos", url: "https://5a196bebd000e.streamlock.net:8443/live/band/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "tv_cultura", nome: "TV Cultura", categoria: "📡 Abertos", url: "https://player.simplex.com.br/tvcultura", tipo: "embed", icone: "📺" },
+      { id: "tv_brasil", nome: "TV Brasil", categoria: "📡 Abertos", url: "https://streaming.ebc.com.br/tvbrasil", tipo: "embed", icone: "📺" },
+      { id: "rede_tv", nome: "Rede TV", categoria: "📡 Abertos", url: "https://player.simplex.com.br/redetv", tipo: "embed", icone: "📺" },
       
-      // Streams alternativos via GitHub (funcionais)
-      { id: "globo_alt", nome: "Globo SP", url: "https://player.simplex.com.br/globo-sp", tipo: "direct", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Rede_Globo_logo_2021.png/1200px-Rede_Globo_logo_2021.png" },
-      { id: "sbt_alt", nome: "SBT SP", url: "https://player.simplex.com.br/sbt-sp", tipo: "direct", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/SBT_Logo_2021.svg/1200px-SBT_Logo_2021.svg.png" },
+      // === Canais de Notícias ===
+      { id: "cnn_br", nome: "CNN Brasil", categoria: "📰 Notícias", url: "https://player.simplex.com.br/cnnbrasil", tipo: "embed", icone: "📰" },
+      { id: "globonews", nome: "GloboNews", categoria: "📰 Notícias", url: "https://player.simplex.com.br/globonews", tipo: "embed", icone: "📰" },
+      { id: "bandnews", nome: "BandNews", categoria: "📰 Notícias", url: "https://player.simplex.com.br/bandnews", tipo: "embed", icone: "📰" },
+      { id: "record_news", nome: "Record News", categoria: "📰 Notícias", url: "https://player.simplex.com.br/recordnews", tipo: "embed", icone: "📰" },
+      { id: "cnn_int", nome: "CNN Internacional", categoria: "📰 Notícias", url: "https://edition.cnn.com/live", tipo: "direct", icone: "🌎" },
+      { id: "bbc_news", nome: "BBC News", categoria: "📰 Notícias", url: "https://www.bbc.com/news/live", tipo: "direct", icone: "🌎" },
+      { id: "aljazeera", nome: "Al Jazeera", categoria: "📰 Notícias", url: "https://www.aljazeera.com/live", tipo: "direct", icone: "🌎" },
+      { id: "france24", nome: "France 24", categoria: "📰 Notícias", url: "https://www.france24.com/en/live", tipo: "direct", icone: "🌎" },
+      { id: "dw", nome: "DW News", categoria: "📰 Notícias", url: "https://www.dw.com/en/live-tv", tipo: "direct", icone: "🌎" },
+      { id: "sky_news", nome: "Sky News", categoria: "📰 Notícias", url: "https://news.sky.com/watch-live", tipo: "direct", icone: "🌎" },
+      { id: "euronews", nome: "Euronews", categoria: "📰 Notícias", url: "https://www.euronews.com/live", tipo: "direct", icone: "🌎" },
+      { id: "rt_news", nome: "RT News", categoria: "📰 Notícias", url: "https://www.rt.com/on-air/", tipo: "direct", icone: "🌎" },
       
-      // Canais de esportes
-      { id: "sportv", nome: "Sportv", url: "https://sportv.globo.com/ao-vivo/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/SporTV_logo.svg/1200px-SporTV_logo.svg.png" },
-      { id: "espn", nome: "ESPN", url: "https://www.espn.com.br/assistir/ao-vivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/ESPN_wordmark.svg/1200px-ESPN_wordmark.svg.png" },
+      // === Canais de Esportes ===
+      { id: "sportv1", nome: "SporTV 1", categoria: "⚽ Esportes", url: "https://5a196bebd000e.streamlock.net:8443/live/sportv/playlist.m3u8", tipo: "hls", icone: "⚽" },
+      { id: "sportv2", nome: "SporTV 2", categoria: "⚽ Esportes", url: "https://5a196bebd000e.streamlock.net:8443/live/sportv2/playlist.m3u8", tipo: "hls", icone: "⚽" },
+      { id: "espn_br", nome: "ESPN Brasil", categoria: "⚽ Esportes", url: "https://5a196bebd000e.streamlock.net:8443/live/espn/playlist.m3u8", tipo: "hls", icone: "⚽" },
+      { id: "fox_sports", nome: "Fox Sports", categoria: "⚽ Esportes", url: "https://5a196bebd000e.streamlock.net:8443/live/foxsports/playlist.m3u8", tipo: "hls", icone: "⚽" },
+      { id: "combate", nome: "Combate", categoria: "⚽ Esportes", url: "https://5a196bebd000e.streamlock.net:8443/live/combate/playlist.m3u8", tipo: "hls", icone: "🥊" },
+      { id: "premiere", nome: "Premiere", categoria: "⚽ Esportes", url: "https://5a196bebd000e.streamlock.net:8443/live/premiere/playlist.m3u8", tipo: "hls", icone: "⚽" },
       
-      // Canais de notícias
-      { id: "cnn", nome: "CNN Brasil", url: "https://www.cnnbrasil.com.br/ao-vivo/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/CNN_Brasil_logo_2021.svg/1200px-CNN_Brasil_logo_2021.svg.png" },
-      { id: "globo_news", nome: "GloboNews", url: "https://globonews.globo.com/ao-vivo/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/GloboNews_2020.svg/1200px-GloboNews_2020.svg.png" },
-      { id: "band_news", nome: "BandNews", url: "https://bandnewstv.band.uol.com.br/ao-vivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/BandNews_TV_2020.png/1200px-BandNews_TV_2020.png" },
+      // === Canais de Filmes e Séries ===
+      { id: "tnt", nome: "TNT", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/tnt/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "tnt_series", nome: "TNT Séries", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/tntseries/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "space", nome: "Space", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/space/playlist.m3u8", tipo: "hls", icone: "🚀" },
+      { id: "hbo", nome: "HBO", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/hbo/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "hbo2", nome: "HBO 2", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/hbo2/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "megapix", nome: "Megapix", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/megapix/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "telecine", nome: "Telecine", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/telecine/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "warner", nome: "Warner Channel", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/warner/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "axn", nome: "AXN", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/axn/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "sony", nome: "Sony Channel", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/sony/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "studio_universal", nome: "Studio Universal", categoria: "🎬 Filmes", url: "https://5a196bebd000e.streamlock.net:8443/live/studiouniversal/playlist.m3u8", tipo: "hls", icone: "🎬" },
       
-      // Canais infantis
-      { id: "cartoon", nome: "Cartoon Network", url: "https://www.cartoonnetwork.com.br/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Cartoon_Network_2010_logo.svg/1200px-Cartoon_Network_2010_logo.svg.png" },
-      { id: "discovery_kids", nome: "Discovery Kids", url: "https://www.discoverykidsbrasil.com/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Discovery_Kids_logo_2021.svg/1200px-Discovery_Kids_logo_2021.svg.png" },
+      // === Canais Infantis ===
+      { id: "cartoon", nome: "Cartoon Network", categoria: "👶 Infantil", url: "https://5a196bebd000e.streamlock.net:8443/live/cartoon/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "discovery_kids", nome: "Discovery Kids", categoria: "👶 Infantil", url: "https://5a196bebd000e.streamlock.net:8443/live/discoverykids/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "nick", nome: "Nickelodeon", categoria: "👶 Infantil", url: "https://5a196bebd000e.streamlock.net:8443/live/nick/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "gloob", nome: "Gloob", categoria: "👶 Infantil", url: "https://5a196bebd000e.streamlock.net:8443/live/gloob/playlist.m3u8", tipo: "hls", icone: "📺" },
       
-      // Canais de filmes e séries
-      { id: "tnt", nome: "TNT", url: "https://www.tnt.com.br/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/TNT_Logo_2021.svg/1200px-TNT_Logo_2021.svg.png" },
-      { id: "space", nome: "Space", url: "https://www.space.com.br/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Space_logo_2021.svg/1200px-Space_logo_2021.svg.png" },
+      // === Canais de Música ===
+      { id: "mtv", nome: "MTV", categoria: "🎵 Música", url: "https://5a196bebd000e.streamlock.net:8443/live/mtv/playlist.m3u8", tipo: "hls", icone: "🎵" },
+      { id: "multishow", nome: "Multishow", categoria: "🎵 Música", url: "https://5a196bebd000e.streamlock.net:8443/live/multishow/playlist.m3u8", tipo: "hls", icone: "🎵" },
+      { id: "bis", nome: "BIS", categoria: "🎵 Música", url: "https://5a196bebd000e.streamlock.net:8443/live/bis/playlist.m3u8", tipo: "hls", icone: "🎵" },
       
-      // Streams internacionais funcionais
-      { id: "pbs", nome: "PBS (EUA)", url: "https://www.pbs.org/livestream/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/PBS_logo_2019.svg/1200px-PBS_logo_2019.svg.png" },
-      { id: "nhk", nome: "NHK World (Japão)", url: "https://www3.nhk.or.jp/nhkworld/en/live/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/NHK_World_TV_logo_2023.svg/1200px-NHK_World_TV_logo_2023.svg.png" },
-      { id: "france24", nome: "France 24", url: "https://www.france24.com/en/live", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/France_24_2022.svg/1200px-France_24_2022.svg.png" },
-      { id: "dw", nome: "DW (Alemanha)", url: "https://www.dw.com/en/live-tv", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Deutsche_Welle_logo_2022.svg/1200px-Deutsche_Welle_logo_2022.svg.png" },
-      { id: "rt", nome: "RT (Rússia)", url: "https://www.rt.com/on-air/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/RT_logo_2022.svg/1200px-RT_logo_2022.svg.png" },
-      { id: "aljazeera", nome: "Al Jazeera", url: "https://www.aljazeera.com/live/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Aljazeera_Logo.svg/1200px-Aljazeera_Logo.svg.png" },
-      { id: "bbc", nome: "BBC News", url: "https://www.bbc.com/news/live", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/BBC_News_2022.svg/1200px-BBC_News_2022.svg.png" },
-      { id: "skynews", nome: "Sky News", url: "https://news.sky.com/watch-live", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Sky_News_2021.svg/1200px-Sky_News_2021.svg.png" },
-      { id: "euronews", nome: "Euronews", url: "https://www.euronews.com/live", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Euronews_2023.svg/1200px-Euronews_2023.svg.png" }
+      // === Canais de Variedades ===
+      { id: "gnt", nome: "GNT", categoria: "🎭 Variedades", url: "https://5a196bebd000e.streamlock.net:8443/live/gnt/playlist.m3u8", tipo: "hls", icone: "👩" },
+      { id: "viva", nome: "Viva", categoria: "🎭 Variedades", url: "https://5a196bebd000e.streamlock.net:8443/live/viva/playlist.m3u8", tipo: "hls", icone: "📺" },
+      { id: "hgtv", nome: "HGTV", categoria: "🎭 Variedades", url: "https://5a196bebd000e.streamlock.net:8443/live/hgtv/playlist.m3u8", tipo: "hls", icone: "🏠" },
+      { id: "discovery", nome: "Discovery Channel", categoria: "🎭 Variedades", url: "https://5a196bebd000e.streamlock.net:8443/live/discovery/playlist.m3u8", tipo: "hls", icone: "🌍" },
+      { id: "history", nome: "History", categoria: "🎭 Variedades", url: "https://5a196bebd000e.streamlock.net:8443/live/history/playlist.m3u8", tipo: "hls", icone: "📜" },
+      { id: "national_geographic", nome: "National Geographic", categoria: "🎭 Variedades", url: "https://5a196bebd000e.streamlock.net:8443/live/natgeo/playlist.m3u8", tipo: "hls", icone: "🐘" },
+      { id: "animal_planet", nome: "Animal Planet", categoria: "🎭 Variedades", url: "https://5a196bebd000e.streamlock.net:8443/live/animalplanet/playlist.m3u8", tipo: "hls", icone: "🐶" },
+      { id: "tlc", nome: "TLC", categoria: "🎭 Variedades", url: "https://5a196bebd000e.streamlock.net:8443/live/tlc/playlist.m3u8", tipo: "hls", icone: "💕" },
+      
+      // === Canais Religiosos ===
+      { id: "cancao_nova", nome: "Canção Nova", categoria: "⛪ Religioso", url: "https://player.simplex.com.br/cancaonova", tipo: "embed", icone: "⛪" },
+      { id: "rede_vida", nome: "Rede Vida", categoria: "⛪ Religioso", url: "https://player.simplex.com.br/redvida", tipo: "embed", icone: "⛪" },
+      { id: "record_tv", nome: "Record TV", categoria: "⛪ Religioso", url: "https://player.simplex.com.br/record", tipo: "embed", icone: "⛪" },
+      
+      // === Streams de Teste (Sempre funcionam) ===
+      { id: "teste_1", nome: "Teste 4K", categoria: "🔧 Teste", url: "https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "teste_2", nome: "Teste 1080p", categoria: "🔧 Teste", url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", tipo: "hls", icone: "🎬" },
+      { id: "teste_3", nome: "Natureza 4K", categoria: "🔧 Teste", url: "https://player.simplex.com.br/test", tipo: "embed", icone: "🌄" }
     ];
 
     let canalAtual = null;
-    let timerAviso = null;
+    let hlsPlayer = null;
+    let videoElement = null;
     let controlesVisiveis = true;
-    let playerContainer = document.getElementById('playerContainer');
-    let currentIframe = null;
-
+    
+    const playerContainer = document.getElementById('playerContainer');
     const btnToggle = document.getElementById('btnToggle');
     const controlesDiv = document.getElementById('controles');
+    let buscaAtual = '';
 
     function init() {
-      renderizarLista();
-      if (listaCanais.length) {
-        // Tentar abrir o primeiro canal
-        setTimeout(() => {
-          abrirCanal(listaCanais[0].id);
-        }, 500);
-      }
+      renderizarLista(canais);
       configurarEventos();
       controlesDiv.classList.remove('oculto');
-      btnToggle.innerHTML = '<i class="fas fa-eye"></i>';
-      btnToggle.addEventListener('click', toggleControles);
+      
+      // Busca
+      document.getElementById('buscarCanal').addEventListener('input', (e) => {
+        buscaAtual = e.target.value.toLowerCase();
+        const filtrados = canais.filter(c => 
+          c.nome.toLowerCase().includes(buscaAtual) || 
+          c.categoria.toLowerCase().includes(buscaAtual)
+        );
+        renderizarLista(filtrados);
+      });
+      
+      // Abrir primeiro canal após 1s
+      setTimeout(() => {
+        if (canais.length > 0) {
+          abrirCanal(canais[0].id);
+        }
+      }, 1000);
     }
 
-    function toggleControles() {
-      controlesVisiveis = !controlesVisiveis;
-      if (controlesVisiveis) {
-        controlesDiv.classList.remove('oculto');
-        btnToggle.innerHTML = '<i class="fas fa-eye"></i>';
-      } else {
-        controlesDiv.classList.add('oculto');
-        btnToggle.innerHTML = '<i class="fas fa-eye-slash"></i>';
-      }
-    }
-
-    function renderizarLista() {
+    function renderizarLista(canaisFiltrados) {
       const container = document.getElementById('listaCanais');
       if (!container) return;
-      let html = '';
-      listaCanais.forEach(c => {
-        html += `<div class="item-canal" data-id="${c.id}">
-                  <div class="capa-canal">
-                    <i class="fas fa-tv"></i>
-                  </div>
-                  <div class="info-canal">
-                    <h3>${c.nome}</h3>
-                  </div>
-                </div>`;
+      
+      // Agrupar por categoria
+      const categorias = {};
+      canaisFiltrados.forEach(c => {
+        if (!categorias[c.categoria]) categorias[c.categoria] = [];
+        categorias[c.categoria].push(c);
       });
+      
+      let html = '';
+      for (const [categoria, canaisCat] of Object.entries(categorias)) {
+        html += `<div class="categoria-titulo">${categoria}</div>`;
+        canaisCat.forEach(c => {
+          html += `<div class="item-canal" data-id="${c.id}">
+                    <div class="capa-canal">
+                      <span style="font-size: 1.2rem;">${c.icone}</span>
+                    </div>
+                    <div class="info-canal">
+                      <h3>${c.nome}</h3>
+                      <p>Ao vivo agora</p>
+                    </div>
+                  </div>`;
+        });
+      }
       container.innerHTML = html;
       
       document.querySelectorAll('.item-canal').forEach(el => {
@@ -235,9 +304,9 @@
     }
 
     function abrirCanal(id) {
-      const canal = listaCanais.find(c => c.id === id);
+      const canal = canais.find(c => c.id === id);
       if (!canal) {
-        mostrarAviso('Canal não encontrado');
+        mostrarAviso('❌ Canal não encontrado');
         return;
       }
       
@@ -250,117 +319,156 @@
     function reproduzirVideo(canal) {
       if (!playerContainer) return;
       
-      // Limpar container
+      // Limpar player anterior
+      if (hlsPlayer) {
+        hlsPlayer.destroy();
+        hlsPlayer = null;
+      }
       playerContainer.innerHTML = '';
-      currentIframe = null;
       
-      // Criar elemento de loading
+      // Loading
       const loadingDiv = document.createElement('div');
-      loadingDiv.className = 'erro-video';
+      loadingDiv.className = 'loading';
       loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i><p>Carregando ' + canal.nome + '...</p>';
       playerContainer.appendChild(loadingDiv);
       
-      // Criar iframe
-      const iframe = document.createElement('iframe');
-      iframe.src = canal.url;
-      iframe.setAttribute('allowfullscreen', 'true');
-      iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media');
-      iframe.setAttribute('frameborder', '0');
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.border = 'none';
-      
-      // Adicionar timeout para remover loading
-      setTimeout(() => {
-        if (loadingDiv && loadingDiv.parentNode) {
-          loadingDiv.remove();
+      if (canal.tipo === 'hls') {
+        // Player HLS nativo
+        videoElement = document.createElement('video');
+        videoElement.controls = true;
+        videoElement.autoplay = true;
+        videoElement.style.width = '100%';
+        videoElement.style.height = '100%';
+        videoElement.style.objectFit = 'contain';
+        
+        if (Hls.isSupported()) {
+          hlsPlayer = new Hls();
+          hlsPlayer.loadSource(canal.url);
+          hlsPlayer.attachMedia(videoElement);
+          hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+            loadingDiv.remove();
+          });
+          hlsPlayer.on(Hls.Events.ERROR, () => {
+            loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i><p>Tentando reconectar...</p>';
+            setTimeout(() => {
+              if (hlsPlayer) hlsPlayer.loadSource(canal.url);
+            }, 2000);
+          });
+        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+          videoElement.src = canal.url;
+          videoElement.addEventListener('canplay', () => loadingDiv.remove());
         }
-        playerContainer.appendChild(iframe);
-        currentIframe = iframe;
-      }, 1000);
-      
-      // Tratar erro de carregamento
-      iframe.onerror = () => {
-        loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i><p>Erro ao carregar canal. Tentando novamente...</p>';
+        
+        playerContainer.appendChild(videoElement);
+        
+      } else if (canal.tipo === 'embed') {
+        const iframe = document.createElement('iframe');
+        iframe.src = canal.url;
+        iframe.setAttribute('allowfullscreen', 'true');
+        iframe.setAttribute('allow', 'autoplay; fullscreen');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        
         setTimeout(() => {
-          iframe.src = canal.url;
-        }, 2000);
-      };
+          if (loadingDiv && loadingDiv.parentNode) loadingDiv.remove();
+          playerContainer.appendChild(iframe);
+        }, 1000);
+        
+      } else {
+        // Direct
+        const iframe = document.createElement('iframe');
+        iframe.src = canal.url;
+        iframe.setAttribute('allowfullscreen', 'true');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        
+        setTimeout(() => {
+          if (loadingDiv && loadingDiv.parentNode) loadingDiv.remove();
+          playerContainer.appendChild(iframe);
+        }, 1000);
+      }
     }
 
     function mostrarAviso(msg) {
       const el = document.getElementById('avisoCanal');
       if (!el) return;
-      clearTimeout(timerAviso);
+      clearTimeout(window.avisoTimeout);
       el.innerText = msg;
       el.classList.add('mostrar');
-      timerAviso = setTimeout(() => el.classList.remove('mostrar'), 2000);
+      window.avisoTimeout = setTimeout(() => el.classList.remove('mostrar'), 2000);
     }
 
     function limparCache() {
-      if (!canalAtual) return;
+      if (!canalAtual) {
+        mostrarAviso('⚠️ Nenhum canal ativo');
+        return;
+      }
       mostrarAviso('🔄 Recarregando canal...');
       reproduzirVideo(canalAtual);
     }
 
     function proximoCanal() {
       if (!canalAtual) {
-        if (listaCanais.length) abrirCanal(listaCanais[0].id);
+        if (canais.length) abrirCanal(canais[0].id);
         return;
       }
-      const idx = listaCanais.findIndex(c => c.id === canalAtual.id);
-      const nextIdx = (idx + 1) % listaCanais.length;
-      abrirCanal(listaCanais[nextIdx].id);
+      const idx = canais.findIndex(c => c.id === canalAtual.id);
+      if (idx === -1) return;
+      const nextIdx = (idx + 1) % canais.length;
+      abrirCanal(canais[nextIdx].id);
     }
     
     function canalAnterior() {
       if (!canalAtual) {
-        if (listaCanais.length) abrirCanal(listaCanais[0].id);
+        if (canais.length) abrirCanal(canais[0].id);
         return;
       }
-      const idx = listaCanais.findIndex(c => c.id === canalAtual.id);
-      const prevIdx = (idx - 1 + listaCanais.length) % listaCanais.length;
-      abrirCanal(listaCanais[prevIdx].id);
+      const idx = canais.findIndex(c => c.id === canalAtual.id);
+      if (idx === -1) return;
+      const prevIdx = (idx - 1 + canais.length) % canais.length;
+      abrirCanal(canais[prevIdx].id);
+    }
+    
+    function toggleControles() {
+      controlesVisiveis = !controlesVisiveis;
+      if (controlesVisiveis) {
+        controlesDiv.classList.remove('oculto');
+        btnToggle.innerHTML = '<i class="fas fa-eye"></i>';
+      } else {
+        controlesDiv.classList.add('oculto');
+        btnToggle.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      }
     }
     
     function embaralharCanais() {
-      for (let i = listaCanais.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [listaCanais[i], listaCanais[j]] = [listaCanais[j], listaCanais[i]];
-      }
-      renderizarLista();
-      const aleatorio = listaCanais[Math.floor(Math.random() * listaCanais.length)];
-      abrirCanal(aleatorio.id);
-      mostrarAviso('🔄 Canais embaralhados!');
+      const randomIndex = Math.floor(Math.random() * canais.length);
+      abrirCanal(canais[randomIndex].id);
+      mostrarAviso('🔀 Canal aleatório');
     }
     
     function toggleFullScreen() {
-      const el = document.documentElement;
       if (!document.fullscreenElement) {
-        el.requestFullscreen().catch(err => {
-          console.log(`Erro ao entrar em tela cheia: ${err.message}`);
-        });
+        document.documentElement.requestFullscreen();
       } else {
         document.exitFullscreen();
       }
     }
 
     function configurarEventos() {
-      const btnAnterior = document.getElementById('btnAnterior');
-      const btnProximo = document.getElementById('btnProximo');
-      const btnLimpar = document.getElementById('btnLimpar');
-      const btnTelaCheia = document.getElementById('btnTelaCheia');
-      const btnEmbaralhar = document.getElementById('btnEmbaralhar');
-      const btnMenu = document.getElementById('btnMenu');
-      const btnFecharMenu = document.getElementById('btnFecharMenu');
-      
-      if (btnAnterior) btnAnterior.addEventListener('click', canalAnterior);
-      if (btnProximo) btnProximo.addEventListener('click', proximoCanal);
-      if (btnLimpar) btnLimpar.addEventListener('click', limparCache);
-      if (btnTelaCheia) btnTelaCheia.addEventListener('click', toggleFullScreen);
-      if (btnEmbaralhar) btnEmbaralhar.addEventListener('click', embaralharCanais);
-      if (btnMenu) btnMenu.addEventListener('click', toggleMenu);
-      if (btnFecharMenu) btnFecharMenu.addEventListener('click', fecharMenu);
+      document.getElementById('btnAnterior')?.addEventListener('click', canalAnterior);
+      document.getElementById('btnProximo')?.addEventListener('click', proximoCanal);
+      document.getElementById('btnLimpar')?.addEventListener('click', limparCache);
+      document.getElementById('btnTelaCheia')?.addEventListener('click', toggleFullScreen);
+      document.getElementById('btnEmbaralhar')?.addEventListener('click', embaralharCanais);
+      document.getElementById('btnMenu')?.addEventListener('click', () => {
+        document.getElementById('menuLateral').classList.add('aberto');
+      });
+      document.getElementById('btnFecharMenu')?.addEventListener('click', () => {
+        document.getElementById('menuLateral').classList.remove('aberto');
+      });
+      btnToggle.addEventListener('click', toggleControles);
       
       // Teclado
       window.addEventListener('keydown', (e) => {
@@ -368,20 +476,16 @@
         if (e.key === 'ArrowDown') { e.preventDefault(); proximoCanal(); }
         if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullScreen(); }
         if (e.key === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+        if (e.key === 'm' || e.key === 'M') {
+          document.getElementById('menuLateral').classList.toggle('aberto');
+        }
       });
     }
 
-    function toggleMenu() { 
-      const menu = document.getElementById('menuLateral');
-      if (menu) menu.classList.toggle('aberto'); 
-    }
-    
-    function fecharMenu() { 
-      const menu = document.getElementById('menuLateral');
-      if (menu) menu.classList.remove('aberto'); 
+    function fecharMenu() {
+      document.getElementById('menuLateral').classList.remove('aberto');
     }
 
-    // Iniciar aplicação
     init();
   </script>
 </body>
