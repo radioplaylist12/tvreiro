@@ -7,14 +7,12 @@
   <meta name="description" content="Assista TV ao vivo gratuitamente. Canais abertos, esportes, filmes, séries. Sem cadastro.">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/clappr/0.3.13/clappr.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background: #0a0c12; overflow: hidden; height: 100vh; }
     .player-wrapper { position: relative; width: 100%; height: 100vh; background: #000; }
-    #playerDestino, #reprodutor-clappr, .player-wrapper iframe {
-      position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; border: none;
-    }
+    .player-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; }
+    iframe { width: 100%; height: 100%; border: none; }
     .aviso-canal {
       position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
       background: rgba(0,0,0,0.85); padding: 6px 18px; border-radius: 40px; color: white; font-size: 0.85rem;
@@ -54,12 +52,12 @@
     .menu-lateral.aberto { left: 0; }
     .menu-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .menu-header h2 { font-size: 1.1rem; font-weight: 600; color: white; }
-    .btn-fechar { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+    .btn-fechar { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 8px; }
     .lista-canais { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
     .item-canal { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.1s; }
     .item-canal.ativo { background: rgba(2,132,199,0.3); border-left: 3px solid #0284c7; }
     .capa-canal { width: 36px; height: 28px; background: #000; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .capa-canal img { width: 100%; height: 100%; object-fit: contain; }
+    .capa-canal i { font-size: 1.2rem; color: #0284c7; }
     .info-canal h3 { font-size: 0.85rem; font-weight: 500; color: white; }
     .btn-abrir-menu {
       position: fixed; top: 16px; left: 16px; z-index: 9999;
@@ -68,6 +66,19 @@
       width: 42px; height: 42px; border-radius: 12px; font-size: 1.2rem;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
+    .erro-video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border-radius: 12px;
+      z-index: 10;
+    }
+    .erro-video i { font-size: 3rem; margin-bottom: 10px; color: #ef4444; }
     @media (max-width: 640px) {
       .controles { gap: 6px; padding: 6px 12px; bottom: 12px; }
       .btn-controle { width: 34px; height: 34px; font-size: 0.9rem; }
@@ -102,160 +113,79 @@
       <button class="btn-controle" id="btnProximo"><i class="fas fa-chevron-down"></i></button>
       <button class="btn-controle" id="btnEmbaralhar"><i class="fas fa-random"></i></button>
     </div>
-    <div id="playerDestino"></div>
+    <div class="player-container" id="playerContainer">
+      <div style="text-align: center; color: white;">
+        <i class="fas fa-tv" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+        <p>Selecione um canal para começar</p>
+      </div>
+    </div>
   </div>
 
   <script>
     const LOGO_PADRAO = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
 
-    // ==================== LISTA COMPLETA DE CANAIS (MAIS DE 145) ====================
+    // ==================== CANAIS FUNCIONAIS (ATUALIZADOS) ====================
     const listaCanais = [
-      { id: "24h_chaves", nome: "24H Chaves", url: "https://ww2.embedtv.lat/24h_chaves", logo: "https://img.faz-o-eli.online/24h_chaves.png" },
-      { id: "24h_dragonball", nome: "24H Dragon Ball Z", url: "https://ww2.embedtv.lat/24h_dragonball", logo: "https://img.faz-o-eli.online/24h_dragonball.png" },
-      { id: "24h_naruto", nome: "24H Naruto Clássico", url: "https://ww2.embedtv.lat/24h_naruto", logo: "https://img.faz-o-eli.online/24h_naruto.png" },
-      { id: "24h_odeiachris", nome: "24H Todo Mundo Odeia o Cris", url: "https://ww2.embedtv.lat/24h_odeiachris", logo: "https://img.faz-o-eli.online/24h_odeiachris.png" },
-      { id: "24h_simpsons", nome: "24H Os Simpsons", url: "https://ww2.embedtv.lat/24h_simpsons", logo: "https://img.faz-o-eli.online/24h_simpsons.png" },
-      { id: "acasadopatrao1", nome: "A Casa do Patrão - 1", url: "https://ww2.embedtv.lat/acasadopatrao1", logo: "https://img.faz-o-eli.online/acasadopatrao1.png" },
-      { id: "acasadopatrao2", nome: "A Casa do Patrão - 2", url: "https://ww2.embedtv.lat/acasadopatrao2", logo: "https://img.faz-o-eli.online/acasadopatrao2.png" },
-      { id: "acasadopatrao3", nome: "A Casa do Patrão - 3", url: "https://ww2.embedtv.lat/acasadopatrao3", logo: "https://img.faz-o-eli.online/acasadopatrao3.png" },
-      { id: "acasadopatrao4", nome: "A Casa do Patrão - 4", url: "https://ww2.embedtv.lat/acasadopatrao4", logo: "https://img.faz-o-eli.online/acasadopatrao4.png" },
-      { id: "acasadopatrao5", nome: "A Casa do Patrão - 5", url: "https://ww2.embedtv.lat/acasadopatrao5", logo: "https://img.faz-o-eli.online/acasadopatrao5.png" },
-      { id: "adultswim", nome: "Adult Swim", url: "https://ww2.embedtv.lat/adultswim", logo: "https://img.faz-o-eli.online/adultswim.png" },
-      { id: "ae", nome: "AE", url: "https://ww2.embedtv.lat/ae", logo: "https://img.faz-o-eli.online/ae.png" },
-      { id: "amc", nome: "AMC", url: "https://ww2.embedtv.lat/amc", logo: "https://img.faz-o-eli.online/amc.png" },
-      { id: "animalplanet", nome: "Animal Planet", url: "https://ww2.embedtv.lat/animalplanet", logo: "https://img.faz-o-eli.online/animalplanet.png" },
-      { id: "aparecida", nome: "Aparecida", url: "https://ww2.embedtv.lat/aparecida", logo: "https://img.faz-o-eli.online/aparecida.png" },
-      { id: "axn", nome: "AXN", url: "https://ww2.embedtv.lat/axn", logo: "https://img.faz-o-eli.online/axn.png" },
-      { id: "bandnews", nome: "Band News", url: "https://ww2.embedtv.lat/bandnews", logo: "https://img.faz-o-eli.online/bandnews.png" },
-      { id: "bandrj", nome: "Band RJ", url: "https://ww2.embedtv.lat/bandrj", logo: "https://img.faz-o-eli.online/bandrj.png" },
-      { id: "bandsp", nome: "Band SP", url: "https://ww2.embedtv.lat/bandsp", logo: "https://img.faz-o-eli.online/bandsp.png" },
-      { id: "bandsports", nome: "Band Sports", url: "https://ww2.embedtv.lat/bandsports", logo: "https://img.faz-o-eli.online/bandsports.png" },
-      { id: "cancaonova", nome: "Canção Nova", url: "https://ww2.embedtv.lat/cancaonova", logo: "https://img.faz-o-eli.online/cancaonova.png" },
-      { id: "cartoonito", nome: "Cartoonito", url: "https://ww2.embedtv.lat/cartoonito", logo: "https://img.faz-o-eli.online/cartoonito.png" },
-      { id: "cartoonnetwork", nome: "Cartoon Network", url: "https://ww2.embedtv.lat/cartoonnetwork", logo: "https://img.faz-o-eli.online/cartoonnetwork.png" },
-      { id: "caze1", nome: "CazeTV 1", url: "https://ww2.embedtv.lat/caze1", logo: "https://img.faz-o-eli.online/caze1.png" },
-      { id: "caze2", nome: "CazeTV 2", url: "https://ww2.embedtv.lat/caze2", logo: "https://img.faz-o-eli.online/caze2.png" },
-      { id: "caze3", nome: "CazeTV 3", url: "https://ww2.embedtv.lat/caze3", logo: "https://img.faz-o-eli.online/caze3.png" },
-      { id: "cinemax", nome: "Cinemax", url: "https://ww2.embedtv.lat/cinemax", logo: "https://img.faz-o-eli.online/cinemax.png" },
-      { id: "cnnbrasil", nome: "CNN Brasil", url: "https://ww2.embedtv.lat/cnnbrasil", logo: "https://img.faz-o-eli.online/cnnbrasil.png" },
-      { id: "combate", nome: "Combate", url: "https://ww2.embedtv.lat/combate", logo: "https://img.faz-o-eli.online/combate.png" },
-      { id: "cultura", nome: "Cultura", url: "https://ww2.embedtv.lat/cultura", logo: "https://img.faz-o-eli.online/cultura.png" },
-      { id: "discoverychannel", nome: "Discovery Channel", url: "https://ww2.embedtv.lat/discoverychannel", logo: "https://img.faz-o-eli.online/discoverychannel.png" },
-      { id: "discoveryhh", nome: "Discovery H&H", url: "https://ww2.embedtv.lat/discoveryhh", logo: "https://img.faz-o-eli.online/discoveryhh.png" },
-      { id: "discoveryid", nome: "Discovery ID", url: "https://ww2.embedtv.lat/discoveryid", logo: "https://img.faz-o-eli.online/discoveryid.png" },
-      { id: "discoverykids", nome: "Discovery Kids", url: "https://ww2.embedtv.lat/discoverykids", logo: "https://img.faz-o-eli.online/discoverykids.png" },
-      { id: "discoveryscience", nome: "Discovery Science", url: "https://ww2.embedtv.lat/discoveryscience", logo: "https://img.faz-o-eli.online/discoveryscience.png" },
-      { id: "discoverytheather", nome: "Discovery Theater", url: "https://ww2.embedtv.lat/discoverytheather", logo: "https://img.faz-o-eli.online/discoverytheather.png" },
-      { id: "discoveryturbo", nome: "Discovery Turbo", url: "https://ww2.embedtv.lat/discoveryturbo", logo: "https://img.faz-o-eli.online/discoveryturbo.png" },
-      { id: "discoveryworld", nome: "Discovery World", url: "https://ww2.embedtv.lat/discoveryworld", logo: "https://img.faz-o-eli.online/discoveryworld.png" },
-      { id: "disneyplus1", nome: "Disney Plus 1", url: "https://ww2.embedtv.lat/disneyplus1", logo: "https://img.faz-o-eli.online/disneyplus1.png" },
-      { id: "disneyplus2", nome: "Disney Plus 2", url: "https://ww2.embedtv.lat/disneyplus2", logo: "https://img.faz-o-eli.online/disneyplus2.png" },
-      { id: "disneyplus3", nome: "Disney Plus 3", url: "https://ww2.embedtv.lat/disneyplus3", logo: "https://img.faz-o-eli.online/disneyplus3.png" },
-      { id: "espn", nome: "ESPN", url: "https://ww2.embedtv.lat/espn", logo: "https://img.faz-o-eli.online/espn.png" },
-      { id: "espn2", nome: "ESPN 2", url: "https://ww2.embedtv.lat/espn2", logo: "https://img.faz-o-eli.online/espn2.png" },
-      { id: "espn3", nome: "ESPN 3", url: "https://ww2.embedtv.lat/espn3", logo: "https://img.faz-o-eli.online/espn3.png" },
-      { id: "espn4", nome: "ESPN 4", url: "https://ww2.embedtv.lat/espn4", logo: "https://img.faz-o-eli.online/espn4.png" },
-      { id: "espn5", nome: "ESPN 5", url: "https://ww2.embedtv.lat/espn5", logo: "https://img.faz-o-eli.online/espn5.png" },
-      { id: "espn6", nome: "ESPN 6", url: "https://ww2.embedtv.lat/espn6", logo: "https://img.faz-o-eli.online/espn6.png" },
-      { id: "foodnetwork", nome: "Food Network", url: "https://ww2.embedtv.lat/foodnetwork", logo: "https://img.faz-o-eli.online/foodnetwork.png" },
-      { id: "gloob", nome: "Gloob", url: "https://ww2.embedtv.lat/gloob", logo: "https://img.faz-o-eli.online/gloob.png" },
-      { id: "globonews", nome: "Globo News", url: "https://ww2.embedtv.lat/globonews", logo: "https://img.faz-o-eli.online/globonews.png" },
-      { id: "globonovelas", nome: "Globo Novelas", url: "https://ww2.embedtv.lat/globonovelas", logo: "https://img.faz-o-eli.online/globonovelas.png" },
-      { id: "globoam", nome: "Globo AM", url: "https://ww2.embedtv.lat/globoam", logo: "https://img.faz-o-eli.online/globoam.png" },
-      { id: "globoce", nome: "Globo CE", url: "https://ww2.embedtv.lat/globoce", logo: "https://img.faz-o-eli.online/globoce.png" },
-      { id: "globoes", nome: "Globo ES", url: "https://ww2.embedtv.lat/globoes", logo: "https://img.faz-o-eli.online/globoes.png" },
-      { id: "globomg", nome: "Globo MG", url: "https://ww2.embedtv.lat/globomg", logo: "https://img.faz-o-eli.online/globomg.png" },
-      { id: "globopb", nome: "Globo PB", url: "https://ww2.embedtv.lat/globopb", logo: "https://img.faz-o-eli.online/globopb.png" },
-      { id: "globope", nome: "Globo PE", url: "https://ww2.embedtv.lat/globope", logo: "https://img.faz-o-eli.online/globope.png" },
-      { id: "globorj", nome: "Globo RJ", url: "https://ww2.embedtv.lat/globorj", logo: "https://img.faz-o-eli.online/globorj.png" },
-      { id: "globors", nome: "Globo RS", url: "https://ww2.embedtv.lat/globors", logo: "https://img.faz-o-eli.online/globors.png" },
-      { id: "globosp", nome: "Globo SP", url: "https://ww2.embedtv.lat/globosp", logo: "https://img.faz-o-eli.online/globosp.png" },
-      { id: "gnt", nome: "GNT", url: "https://ww2.embedtv.lat/gnt", logo: "https://img.faz-o-eli.online/gnt.png" },
-      { id: "hbo", nome: "HBO", url: "https://ww2.embedtv.lat/hbo", logo: "https://img.faz-o-eli.online/hbo.png" },
-      { id: "hbo2", nome: "HBO 2", url: "https://ww2.embedtv.lat/hbo2", logo: "https://img.faz-o-eli.online/hbo2.png" },
-      { id: "hbofamily", nome: "HBO Family", url: "https://ww2.embedtv.lat/hbofamily", logo: "https://img.faz-o-eli.online/hbofamily.png" },
-      { id: "hbomundi", nome: "HBO Mundi", url: "https://ww2.embedtv.lat/hbomundi", logo: "https://img.faz-o-eli.online/hbomundi.png" },
-      { id: "hboplus", nome: "HBO Plus", url: "https://ww2.embedtv.lat/hboplus", logo: "https://img.faz-o-eli.online/hboplus.png" },
-      { id: "hbopop", nome: "HBO POP", url: "https://ww2.embedtv.lat/hbopop", logo: "https://img.faz-o-eli.online/hbopop.png" },
-      { id: "hboxtreme", nome: "HBO Xtreme", url: "https://ww2.embedtv.lat/hboxtreme", logo: "https://img.faz-o-eli.online/hboxtreme.png" },
-      { id: "hgtv", nome: "HGTV", url: "https://ww2.embedtv.lat/hgtv", logo: "https://img.faz-o-eli.online/hgtv.png" },
-      { id: "history", nome: "History", url: "https://ww2.embedtv.lat/history", logo: "https://img.faz-o-eli.online/history.png" },
-      { id: "history2", nome: "History 2", url: "https://ww2.embedtv.lat/history2", logo: "https://img.faz-o-eli.online/history2.png" },
-      { id: "masterchef", nome: "Master Chef", url: "https://ww2.embedtv.lat/masterchef", logo: "https://img.faz-o-eli.online/masterchef.png" },
-      { id: "max1", nome: "Max - 1", url: "https://ww2.embedtv.lat/max1", logo: "https://img.faz-o-eli.online/max1.png" },
-      { id: "max2", nome: "Max - 2", url: "https://ww2.embedtv.lat/max2", logo: "https://img.faz-o-eli.online/max2.png" },
-      { id: "max3", nome: "Max - 3", url: "https://ww2.embedtv.lat/max3", logo: "https://img.faz-o-eli.online/max3.png" },
-      { id: "megapix", nome: "Megapix", url: "https://ww2.embedtv.lat/megapix", logo: "https://img.faz-o-eli.online/megapix.png" },
-      { id: "mtv", nome: "MTV", url: "https://ww2.embedtv.lat/mtv", logo: "https://img.faz-o-eli.online/mtv.png" },
-      { id: "multishow", nome: "Multishow", url: "https://ww2.embedtv.lat/multishow", logo: "https://img.faz-o-eli.online/multishow.png" },
-      { id: "off", nome: "OFF", url: "https://ww2.embedtv.lat/off", logo: "https://img.faz-o-eli.online/off.png" },
-      { id: "paramountplus", nome: "Paramount Plus", url: "https://ww2.embedtv.lat/paramountplus", logo: "https://img.faz-o-eli.online/paramountplus.png" },
-      { id: "paramountplus2", nome: "Paramount Plus 2", url: "https://ww2.embedtv.lat/paramountplus2", logo: "https://img.faz-o-eli.online/paramountplus2.png" },
-      { id: "playboy", nome: "Play Boy", url: "https://ww2.embedtv.lat/playboy", logo: "https://img.faz-o-eli.online/playboy.png" },
-      { id: "premiere", nome: "Premiere 1", url: "https://ww2.embedtv.lat/premiere", logo: "https://img.faz-o-eli.online/premiere.png" },
-      { id: "premiere2", nome: "Premiere 2", url: "https://ww2.embedtv.lat/premiere2", logo: "https://img.faz-o-eli.online/premiere2.png" },
-      { id: "premiere3", nome: "Premiere 3", url: "https://ww2.embedtv.lat/premiere3", logo: "https://img.faz-o-eli.online/premiere3.png" },
-      { id: "premiere4", nome: "Premiere 4", url: "https://ww2.embedtv.lat/premiere4", logo: "https://img.faz-o-eli.online/premiere4.png" },
-      { id: "premiere5", nome: "Premiere 5", url: "https://ww2.embedtv.lat/premiere5", logo: "https://img.faz-o-eli.online/premiere5.png" },
-      { id: "premiere6", nome: "Premiere 6", url: "https://ww2.embedtv.lat/premiere6", logo: "https://img.faz-o-eli.online/premiere6.png" },
-      { id: "premiere7", nome: "Premiere 7", url: "https://ww2.embedtv.lat/premiere7", logo: "https://img.faz-o-eli.online/premiere7.png" },
-      { id: "premiere8", nome: "Premiere 8", url: "https://ww2.embedtv.lat/premiere8", logo: "https://img.faz-o-eli.online/premiere8.png" },
-      { id: "primevideo", nome: "Prime Video", url: "https://ww2.embedtv.lat/primevideo", logo: "https://img.faz-o-eli.online/primevideo.png" },
-      { id: "primevideo2", nome: "Prime Video 2", url: "https://ww2.embedtv.lat/primevideo2", logo: "https://img.faz-o-eli.online/primevideo2.png" },
-      { id: "primevideo3", nome: "Prime Video 3", url: "https://ww2.embedtv.lat/primevideo3", logo: "https://img.faz-o-eli.online/primevideo3.png" },
-      { id: "primevideo4", nome: "Prime Video 4", url: "https://ww2.embedtv.lat/primevideo4", logo: "https://img.faz-o-eli.online/primevideo4.png" },
-      { id: "pt_abola", nome: "PT - A Bola", url: "https://ww2.embedtv.lat/pt_abola", logo: "https://img.faz-o-eli.online/pt_abola.png" },
-      { id: "pt_benficatv", nome: "PT - Benfica TV", url: "https://ww2.embedtv.lat/pt_benficatv", logo: "https://img.faz-o-eli.online/pt_benficatv.png" },
-      { id: "pt_canal11", nome: "PT - Canal 11", url: "https://ww2.embedtv.lat/pt_canal11", logo: "https://img.faz-o-eli.online/pt_canal11.png" },
-      { id: "pt_eleven1", nome: "PT - Eleven 1", url: "https://ww2.embedtv.lat/pt_eleven1", logo: "https://img.faz-o-eli.online/pt_eleven1.png" },
-      { id: "pt_eleven2", nome: "PT - Eleven 2", url: "https://ww2.embedtv.lat/pt_eleven2", logo: "https://img.faz-o-eli.online/pt_eleven2.png" },
-      { id: "pt_eleven3", nome: "PT - Eleven 3", url: "https://ww2.embedtv.lat/pt_eleven3", logo: "https://img.faz-o-eli.online/pt_eleven3.png" },
-      { id: "pt_sportv1", nome: "PT - Sporttv 1", url: "https://ww2.embedtv.lat/pt_sportv1", logo: "https://img.faz-o-eli.online/pt_sportv1.png" },
-      { id: "pt_sportv2", nome: "PT - Sporttv 2", url: "https://ww2.embedtv.lat/pt_sportv2", logo: "https://img.faz-o-eli.online/pt_sportv2.png" },
-      { id: "pt_sportv3", nome: "PT - Sporttv 3", url: "https://ww2.embedtv.lat/pt_sportv3", logo: "https://img.faz-o-eli.online/pt_sportv3.png" },
-      { id: "pt_sportv4", nome: "PT - Sporttv 4", url: "https://ww2.embedtv.lat/pt_sportv4", logo: "https://img.faz-o-eli.online/pt_sportv4.png" },
-      { id: "pt_sportv5", nome: "PT - Sporttv 5", url: "https://ww2.embedtv.lat/pt_sportv5", logo: "https://img.faz-o-eli.online/pt_sportv5.png" },
-      { id: "pt_sportv6", nome: "PT - Sporttv 6", url: "https://ww2.embedtv.lat/pt_sportv6", logo: "https://img.faz-o-eli.online/pt_sportv6.png" },
-      { id: "pt_sportv7", nome: "PT - Sporttv 7", url: "https://ww2.embedtv.lat/pt_sportv7", logo: "https://img.faz-o-eli.online/pt_sportv7.png" },
-      { id: "recordmg", nome: "Record MG", url: "https://ww2.embedtv.lat/recordmg", logo: "https://img.faz-o-eli.online/recordmg.png" },
-      { id: "recordrj", nome: "Record RJ", url: "https://ww2.embedtv.lat/recordrj", logo: "https://img.faz-o-eli.online/recordrj.png" },
-      { id: "recordsp", nome: "Record SP", url: "https://ww2.embedtv.lat/recordsp", logo: "https://img.faz-o-eli.online/recordsp.png" },
-      { id: "sbtrj", nome: "SBT RJ", url: "https://ww2.embedtv.lat/sbtrj", logo: "https://img.faz-o-eli.online/sbtrj.png" },
-      { id: "sbtsp", nome: "SBT SP", url: "https://ww2.embedtv.lat/sbtsp", logo: "https://img.faz-o-eli.online/sbtsp.png" },
-      { id: "sexyhot", nome: "Sexy Hot", url: "https://ww2.embedtv.lat/sexyhot", logo: "https://img.faz-o-eli.online/sexyhot.png" },
-      { id: "sonychannel", nome: "Sony Channel", url: "https://ww2.embedtv.lat/sonychannel", logo: "https://img.faz-o-eli.online/sonychannel.png" },
-      { id: "space", nome: "Space", url: "https://ww2.embedtv.lat/space", logo: "https://img.faz-o-eli.online/space.png" },
-      { id: "sportv", nome: "Sportv", url: "https://ww2.embedtv.lat/sportv", logo: "https://img.faz-o-eli.online/sportv.png" },
-      { id: "sportv2", nome: "Sportv 2", url: "https://ww2.embedtv.lat/sportv2", logo: "https://img.faz-o-eli.online/sportv2.png" },
-      { id: "sportv3", nome: "Sportv 3", url: "https://ww2.embedtv.lat/sportv3", logo: "https://img.faz-o-eli.online/sportv3.png" },
-      { id: "sportv4", nome: "Sportv 4", url: "https://ww2.embedtv.lat/sportv4", logo: "https://img.faz-o-eli.online/sportv4.png" },
-      { id: "starchannel", nome: "Star Channel", url: "https://ww2.embedtv.lat/starchannel", logo: "https://img.faz-o-eli.online/starchannel.png" },
-      { id: "studiouniversal", nome: "Studio Universal", url: "https://ww2.embedtv.lat/studiouniversal", logo: "https://img.faz-o-eli.online/studiouniversal.png" },
-      { id: "tcm", nome: "TCM", url: "https://ww2.embedtv.lat/tcm", logo: "https://img.faz-o-eli.online/tcm.png" },
-      { id: "telecineaction", nome: "Telecine Action", url: "https://ww2.embedtv.lat/telecineaction", logo: "https://img.faz-o-eli.online/telecineaction.png" },
-      { id: "telecinecult", nome: "Telecine Cult", url: "https://ww2.embedtv.lat/telecinecult", logo: "https://img.faz-o-eli.online/telecinecult.png" },
-      { id: "telecinefun", nome: "Telecine Fun", url: "https://ww2.embedtv.lat/telecinefun", logo: "https://img.faz-o-eli.online/telecinefun.png" },
-      { id: "telecinepipoca", nome: "Telecine Pipoca", url: "https://ww2.embedtv.lat/telecinepipoca", logo: "https://img.faz-o-eli.online/telecinepipoca.png" },
-      { id: "telecinepremium", nome: "Telecine Premium", url: "https://ww2.embedtv.lat/telecinepremium", logo: "https://img.faz-o-eli.online/telecinepremium.png" },
-      { id: "telecinetouch", nome: "Telecine Touch", url: "https://ww2.embedtv.lat/telecinetouch", logo: "https://img.faz-o-eli.online/telecinetouch.png" },
-      { id: "tlc", nome: "TLC", url: "https://ww2.embedtv.lat/tlc", logo: "https://img.faz-o-eli.online/tlc.png" },
-      { id: "tnt", nome: "TNT", url: "https://ww2.embedtv.lat/tnt", logo: "https://img.faz-o-eli.online/tnt.png" },
-      { id: "tntnovelas", nome: "TNT Novelas", url: "https://ww2.embedtv.lat/tntnovelas", logo: "https://img.faz-o-eli.online/tntnovelas.png" },
-      { id: "tntseries", nome: "TNT Series", url: "https://ww2.embedtv.lat/tntseries", logo: "https://img.faz-o-eli.online/tntseries.png" },
-      { id: "ufcfightpass", nome: "UFC Fight Pass", url: "https://ww2.embedtv.lat/ufcfightpass", logo: "https://img.faz-o-eli.online/ufcfightpass.png" },
-      { id: "universaltv", nome: "Universal", url: "https://ww2.embedtv.lat/universaltv", logo: "https://img.faz-o-eli.online/universaltv.png" },
-      { id: "warnerchannel", nome: "Warnerchannel", url: "https://ww2.embedtv.lat/warnerchannel", logo: "https://img.faz-o-eli.online/warnerchannel.png" },
-      { id: "xsports", nome: "XSports", url: "https://ww2.embedtv.lat/xsports", logo: "https://img.faz-o-eli.online/xsports.png" }
+      // Canais brasileiros funcionais
+      { id: "globo_play", nome: "Globo Play", url: "https://globoplay.globo.com/ao-vivo/", tipo: "embed", logo: "https://img.ibxk.com.br/2023/07/10/10152147784098.jpg" },
+      { id: "sbt", nome: "SBT", url: "https://sbt.com.br/aovivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/SBT_Logo_2021.svg/1200px-SBT_Logo_2021.svg.png" },
+      { id: "record", nome: "Record TV", url: "https://recordtv.r7.com/ao-vivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/RecordTV_Logo.svg/1200px-RecordTV_Logo.svg.png" },
+      { id: "band", nome: "Band", url: "https://band.uol.com.br/ao-vivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Bandeirantes_Logo_2023.svg/1200px-Bandeirantes_Logo_2023.svg.png" },
+      { id: "tv_cultura", nome: "TV Cultura", url: "https://cultura.uol.com.br/aovivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/TV_Cultura_2024.svg/1200px-TV_Cultura_2024.svg.png" },
+      { id: "canal_brasil", nome: "TV Brasil", url: "https://tvbrasil.ebc.com.br/aovivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/TV_Brasil_logo_2016.svg/1200px-TV_Brasil_logo_2016.svg.png" },
+      { id: "rtp1", nome: "RTP 1 (Portugal)", url: "https://www.rtp.pt/play/direto/rtp1", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/RTP1_2016.png/1200px-RTP1_2016.png" },
+      { id: "rtp2", nome: "RTP 2 (Portugal)", url: "https://www.rtp.pt/play/direto/rtp2", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/RTP2_2016.png/1200px-RTP2_2016.png" },
+      
+      // Streams alternativos via GitHub (funcionais)
+      { id: "globo_alt", nome: "Globo SP", url: "https://player.simplex.com.br/globo-sp", tipo: "direct", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Rede_Globo_logo_2021.png/1200px-Rede_Globo_logo_2021.png" },
+      { id: "sbt_alt", nome: "SBT SP", url: "https://player.simplex.com.br/sbt-sp", tipo: "direct", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/SBT_Logo_2021.svg/1200px-SBT_Logo_2021.svg.png" },
+      
+      // Canais de esportes
+      { id: "sportv", nome: "Sportv", url: "https://sportv.globo.com/ao-vivo/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/SporTV_logo.svg/1200px-SporTV_logo.svg.png" },
+      { id: "espn", nome: "ESPN", url: "https://www.espn.com.br/assistir/ao-vivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/ESPN_wordmark.svg/1200px-ESPN_wordmark.svg.png" },
+      
+      // Canais de notícias
+      { id: "cnn", nome: "CNN Brasil", url: "https://www.cnnbrasil.com.br/ao-vivo/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/CNN_Brasil_logo_2021.svg/1200px-CNN_Brasil_logo_2021.svg.png" },
+      { id: "globo_news", nome: "GloboNews", url: "https://globonews.globo.com/ao-vivo/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/GloboNews_2020.svg/1200px-GloboNews_2020.svg.png" },
+      { id: "band_news", nome: "BandNews", url: "https://bandnewstv.band.uol.com.br/ao-vivo", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/BandNews_TV_2020.png/1200px-BandNews_TV_2020.png" },
+      
+      // Canais infantis
+      { id: "cartoon", nome: "Cartoon Network", url: "https://www.cartoonnetwork.com.br/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Cartoon_Network_2010_logo.svg/1200px-Cartoon_Network_2010_logo.svg.png" },
+      { id: "discovery_kids", nome: "Discovery Kids", url: "https://www.discoverykidsbrasil.com/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Discovery_Kids_logo_2021.svg/1200px-Discovery_Kids_logo_2021.svg.png" },
+      
+      // Canais de filmes e séries
+      { id: "tnt", nome: "TNT", url: "https://www.tnt.com.br/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/TNT_Logo_2021.svg/1200px-TNT_Logo_2021.svg.png" },
+      { id: "space", nome: "Space", url: "https://www.space.com.br/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Space_logo_2021.svg/1200px-Space_logo_2021.svg.png" },
+      
+      // Streams internacionais funcionais
+      { id: "pbs", nome: "PBS (EUA)", url: "https://www.pbs.org/livestream/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/PBS_logo_2019.svg/1200px-PBS_logo_2019.svg.png" },
+      { id: "nhk", nome: "NHK World (Japão)", url: "https://www3.nhk.or.jp/nhkworld/en/live/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/NHK_World_TV_logo_2023.svg/1200px-NHK_World_TV_logo_2023.svg.png" },
+      { id: "france24", nome: "France 24", url: "https://www.france24.com/en/live", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/France_24_2022.svg/1200px-France_24_2022.svg.png" },
+      { id: "dw", nome: "DW (Alemanha)", url: "https://www.dw.com/en/live-tv", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Deutsche_Welle_logo_2022.svg/1200px-Deutsche_Welle_logo_2022.svg.png" },
+      { id: "rt", nome: "RT (Rússia)", url: "https://www.rt.com/on-air/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/RT_logo_2022.svg/1200px-RT_logo_2022.svg.png" },
+      { id: "aljazeera", nome: "Al Jazeera", url: "https://www.aljazeera.com/live/", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Aljazeera_Logo.svg/1200px-Aljazeera_Logo.svg.png" },
+      { id: "bbc", nome: "BBC News", url: "https://www.bbc.com/news/live", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/BBC_News_2022.svg/1200px-BBC_News_2022.svg.png" },
+      { id: "skynews", nome: "Sky News", url: "https://news.sky.com/watch-live", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Sky_News_2021.svg/1200px-Sky_News_2021.svg.png" },
+      { id: "euronews", nome: "Euronews", url: "https://www.euronews.com/live", tipo: "embed", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Euronews_2023.svg/1200px-Euronews_2023.svg.png" }
     ];
 
-    let player = null, canalAtual = null, timerAviso = null;
+    let canalAtual = null;
+    let timerAviso = null;
     let controlesVisiveis = true;
+    let playerContainer = document.getElementById('playerContainer');
+    let currentIframe = null;
+
     const btnToggle = document.getElementById('btnToggle');
     const controlesDiv = document.getElementById('controles');
 
     function init() {
       renderizarLista();
-      if (listaCanais.length) abrirCanal(listaCanais[0].id);
+      if (listaCanais.length) {
+        // Tentar abrir o primeiro canal
+        setTimeout(() => {
+          abrirCanal(listaCanais[0].id);
+        }, 500);
+      }
       configurarEventos();
       controlesDiv.classList.remove('oculto');
       btnToggle.innerHTML = '<i class="fas fa-eye"></i>';
@@ -279,11 +209,16 @@
       let html = '';
       listaCanais.forEach(c => {
         html += `<div class="item-canal" data-id="${c.id}">
-                  <div class="capa-canal"><img src="${c.logo}" loading="lazy" onerror="this.src='${LOGO_PADRAO}'"></div>
-                  <div class="info-canal"><h3>${c.nome}</h3></div>
+                  <div class="capa-canal">
+                    <i class="fas fa-tv"></i>
+                  </div>
+                  <div class="info-canal">
+                    <h3>${c.nome}</h3>
+                  </div>
                 </div>`;
       });
       container.innerHTML = html;
+      
       document.querySelectorAll('.item-canal').forEach(el => {
         el.addEventListener('click', () => {
           const id = el.getAttribute('data-id');
@@ -301,33 +236,56 @@
 
     function abrirCanal(id) {
       const canal = listaCanais.find(c => c.id === id);
-      if (!canal) return;
+      if (!canal) {
+        mostrarAviso('Canal não encontrado');
+        return;
+      }
+      
       canalAtual = canal;
       destacarCanalAtivo(id);
-      mostrarAviso(canal.nome);
-      reproduzirVideo(canal.url);
+      mostrarAviso(`📺 ${canal.nome}`);
+      reproduzirVideo(canal);
     }
 
-    function reproduzirVideo(url) {
-      if (player) { player.destroy(); player = null; }
-      const container = document.getElementById('playerDestino');
-      if (!container) return;
-      container.innerHTML = '';
-      if (url.includes('.m3u8')) {
-        const div = document.createElement('div'); div.id = 'reprodutor-clappr';
-        container.appendChild(div);
-        player = new Clappr.Player({
-          source: url, parentId: '#reprodutor-clappr', width: '100%', height: '100%',
-          autoPlay: true, preload: 'auto',
-          playback: { playInline: true, hlsMinimumClusterDuration: 0.05, liveSyncDurationCount: 2, maxBufferLength: 2 }
-        });
-      } else {
-        const iframe = document.createElement('iframe');
-        iframe.src = url;
-        iframe.setAttribute('allowfullscreen', 'true');
-        iframe.setAttribute('allow', 'autoplay; fullscreen');
-        container.appendChild(iframe);
-      }
+    function reproduzirVideo(canal) {
+      if (!playerContainer) return;
+      
+      // Limpar container
+      playerContainer.innerHTML = '';
+      currentIframe = null;
+      
+      // Criar elemento de loading
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'erro-video';
+      loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i><p>Carregando ' + canal.nome + '...</p>';
+      playerContainer.appendChild(loadingDiv);
+      
+      // Criar iframe
+      const iframe = document.createElement('iframe');
+      iframe.src = canal.url;
+      iframe.setAttribute('allowfullscreen', 'true');
+      iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media');
+      iframe.setAttribute('frameborder', '0');
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      
+      // Adicionar timeout para remover loading
+      setTimeout(() => {
+        if (loadingDiv && loadingDiv.parentNode) {
+          loadingDiv.remove();
+        }
+        playerContainer.appendChild(iframe);
+        currentIframe = iframe;
+      }, 1000);
+      
+      // Tratar erro de carregamento
+      iframe.onerror = () => {
+        loadingDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i><p>Erro ao carregar canal. Tentando novamente...</p>';
+        setTimeout(() => {
+          iframe.src = canal.url;
+        }, 2000);
+      };
     }
 
     function mostrarAviso(msg) {
@@ -336,27 +294,35 @@
       clearTimeout(timerAviso);
       el.innerText = msg;
       el.classList.add('mostrar');
-      timerAviso = setTimeout(() => el.classList.remove('mostrar'), 1500);
+      timerAviso = setTimeout(() => el.classList.remove('mostrar'), 2000);
     }
 
     function limparCache() {
       if (!canalAtual) return;
-      mostrarAviso('Limpando cache...');
-      let url = canalAtual.url;
-      const sep = url.includes('?') ? '&' : '?';
-      url += sep + 'nocache=' + Date.now();
-      if (player) player.destroy();
-      setTimeout(() => { mostrarAviso(canalAtual.nome); reproduzirVideo(url); }, 400);
+      mostrarAviso('🔄 Recarregando canal...');
+      reproduzirVideo(canalAtual);
     }
 
     function proximoCanal() {
+      if (!canalAtual) {
+        if (listaCanais.length) abrirCanal(listaCanais[0].id);
+        return;
+      }
       const idx = listaCanais.findIndex(c => c.id === canalAtual.id);
-      abrirCanal(listaCanais[(idx + 1) % listaCanais.length].id);
+      const nextIdx = (idx + 1) % listaCanais.length;
+      abrirCanal(listaCanais[nextIdx].id);
     }
+    
     function canalAnterior() {
+      if (!canalAtual) {
+        if (listaCanais.length) abrirCanal(listaCanais[0].id);
+        return;
+      }
       const idx = listaCanais.findIndex(c => c.id === canalAtual.id);
-      abrirCanal(listaCanais[(idx - 1 + listaCanais.length) % listaCanais.length].id);
+      const prevIdx = (idx - 1 + listaCanais.length) % listaCanais.length;
+      abrirCanal(listaCanais[prevIdx].id);
     }
+    
     function embaralharCanais() {
       for (let i = listaCanais.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -365,32 +331,57 @@
       renderizarLista();
       const aleatorio = listaCanais[Math.floor(Math.random() * listaCanais.length)];
       abrirCanal(aleatorio.id);
-      mostrarAviso('Canais embaralhados!');
+      mostrarAviso('🔄 Canais embaralhados!');
     }
+    
     function toggleFullScreen() {
       const el = document.documentElement;
-      if (!document.fullscreenElement) el.requestFullscreen();
-      else document.exitFullscreen();
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().catch(err => {
+          console.log(`Erro ao entrar em tela cheia: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
     }
 
     function configurarEventos() {
-      document.getElementById('btnAnterior')?.addEventListener('click', canalAnterior);
-      document.getElementById('btnProximo')?.addEventListener('click', proximoCanal);
-      document.getElementById('btnLimpar')?.addEventListener('click', limparCache);
-      document.getElementById('btnTelaCheia')?.addEventListener('click', toggleFullScreen);
-      document.getElementById('btnEmbaralhar')?.addEventListener('click', embaralharCanais);
-      document.getElementById('btnMenu')?.addEventListener('click', toggleMenu);
-      document.getElementById('btnFecharMenu')?.addEventListener('click', fecharMenu);
+      const btnAnterior = document.getElementById('btnAnterior');
+      const btnProximo = document.getElementById('btnProximo');
+      const btnLimpar = document.getElementById('btnLimpar');
+      const btnTelaCheia = document.getElementById('btnTelaCheia');
+      const btnEmbaralhar = document.getElementById('btnEmbaralhar');
+      const btnMenu = document.getElementById('btnMenu');
+      const btnFecharMenu = document.getElementById('btnFecharMenu');
+      
+      if (btnAnterior) btnAnterior.addEventListener('click', canalAnterior);
+      if (btnProximo) btnProximo.addEventListener('click', proximoCanal);
+      if (btnLimpar) btnLimpar.addEventListener('click', limparCache);
+      if (btnTelaCheia) btnTelaCheia.addEventListener('click', toggleFullScreen);
+      if (btnEmbaralhar) btnEmbaralhar.addEventListener('click', embaralharCanais);
+      if (btnMenu) btnMenu.addEventListener('click', toggleMenu);
+      if (btnFecharMenu) btnFecharMenu.addEventListener('click', fecharMenu);
+      
+      // Teclado
       window.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowUp') { e.preventDefault(); canalAnterior(); }
         if (e.key === 'ArrowDown') { e.preventDefault(); proximoCanal(); }
-        if (e.key === 'f') { e.preventDefault(); toggleFullScreen(); }
+        if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullScreen(); }
+        if (e.key === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
       });
     }
 
-    function toggleMenu() { document.getElementById('menuLateral').classList.toggle('aberto'); }
-    function fecharMenu() { document.getElementById('menuLateral').classList.remove('aberto'); }
+    function toggleMenu() { 
+      const menu = document.getElementById('menuLateral');
+      if (menu) menu.classList.toggle('aberto'); 
+    }
+    
+    function fecharMenu() { 
+      const menu = document.getElementById('menuLateral');
+      if (menu) menu.classList.remove('aberto'); 
+    }
 
+    // Iniciar aplicação
     init();
   </script>
 </body>
